@@ -48,7 +48,8 @@ class IPToCountry(base_service.BaseService):
         """
         Set initial variables before the run loop starts
         """
-        self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoIP2-Country.mmdb')
+         # self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoIP2-Country.mmdb')
+        self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoLite2-Country.mmdb')
         pass
 
     def run(self):

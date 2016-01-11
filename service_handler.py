@@ -18,7 +18,7 @@ import atexit
 Protocol = "HTTP/1.0"
 ServerPort = 8850
 #The string to search for when finding relevant databases
-db_prepend = 'UQx'
+db_prepend = 'AdelaideX'
 
 class ServiceManager():
     """
@@ -158,6 +158,7 @@ def queue_data(servicehandler):
         for service_module in ServiceManager.servicemodules:
             required_files = service_module.get_files(path)
             for required_file in required_files:
+                print path
                 #Add file to the ingestion table
                 servicehandler.manager.add_to_ingestion(service_module.name(), 'file', os.path.realpath(required_file))
     return True
@@ -229,7 +230,7 @@ class RequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 name = sv.name()
                 status[name] = get_status(name)
             response['response'] = status
-        elif self.path == "newdata":
+        elif self.path == "/newdata":
             response['response'] = 'Could not queue data'
             response['statuscode'] = 500
             if queue_data(self.servicehandler):
