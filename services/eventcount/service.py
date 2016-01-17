@@ -11,6 +11,7 @@ import json
 from pymongo import MongoClient
 from datetime import datetime
 
+
 class Eventcount(base_service.BaseService):
     """
     Collects the clickstream logs from the edX data package using mongoimport system command
@@ -21,13 +22,13 @@ class Eventcount(base_service.BaseService):
         Eventcount.inst = self
         super(Eventcount, self).__init__()
 
-        #The pretty name of the service
+        # The pretty name of the service
         self.pretty_name = "Eventcount"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = True
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
         self.ec_table = "courseevent"
@@ -76,7 +77,7 @@ class Eventcount(base_service.BaseService):
         if self.finished_ingestion("TimeFinder") and last_run < last_timefinder:
             print "STARTING EVENT COUNT"
             for course_id, course in self.courses.items():
-                print "EVENT COUNTING "+str(course_id)
+                print "EVENT COUNTING " + str(course_id)
                 print course_id
 
                 # Get events from course info
@@ -86,7 +87,7 @@ class Eventcount(base_service.BaseService):
                     utils.log("Can not find course info for ." + str(course_id))
                     continue
 
-                #print courseinfo
+                # print courseinfo
 
                 # Get events
                 events = self.get_events(courseinfo)
@@ -99,7 +100,7 @@ class Eventcount(base_service.BaseService):
                 for event_id in events:
                     self.group_event_by_date(course['mongoname'], event_id, events_date_counts)
 
-                #print events_date_counts
+                # print events_date_counts
 
                 # Insert records into database
                 self.insert_ec_table(course_id, events_date_counts)
@@ -109,10 +110,10 @@ class Eventcount(base_service.BaseService):
             self.loop = False
             utils.log("The Event Count ends at: " + str(datetime.now()))
 
-
     def group_event_by_date(self, course_mongo_name, event_id, events_date_counts):
 
-        results = self.mongo_collection.find({"event_type": {"$regex": event_id}, "context.course_id": course_mongo_name})
+        results = self.mongo_collection.find(
+                {"event_type": {"$regex": event_id}, "context.course_id": course_mongo_name})
         for item in results:
             if 'time_date' in item:
                 item_date = item['time_date'].date()
@@ -167,7 +168,6 @@ class Eventcount(base_service.BaseService):
 
         return events
 
-
     def create_ec_table(self, course_id, events):
         """
         Creates the event course tables
@@ -194,7 +194,6 @@ class Eventcount(base_service.BaseService):
         cursor.execute(query)
         self.sql_ec_conn.commit()
 
-
     def insert_ec_table(self, course_id, events_date_counts):
 
         cursor = self.sql_ec_conn.cursor()
@@ -214,13 +213,13 @@ class Eventcount(base_service.BaseService):
             columns_name = columns_name[:-2]
             columns_value = columns_value[:-2]
 
-            query = "INSERT INTO " + ec_tablename + " (course_id, event_date, " + columns_name + ") VALUES ('" + course_id + "', '" + event_date.strftime("%Y-%m-%d") + "', " + columns_value + ");"
+            query = "INSERT INTO " + ec_tablename + " (course_id, event_date, " + columns_name + ") VALUES ('" + course_id + "', '" + event_date.strftime(
+                "%Y-%m-%d") + "', " + columns_value + ");"
 
-            #print query
+            # print query
 
             cursor.execute(query)
         pass
-
 
     def loadcourseinfo(self, json_file):
         """
@@ -277,8 +276,8 @@ def ensure_mongo_indexes():
     :return: None
     """
     utils.log("Setting index for countries")
-    cmd = "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
-    #os.system(cmd)
+    cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
+    os.system(cmd)
 
 
 def get_files(path):
@@ -315,4 +314,3 @@ def service():
     Returns an instance of the service
     """
     return Eventcount()
-

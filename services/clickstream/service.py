@@ -18,13 +18,13 @@ class Clickstream(base_service.BaseService):
         Clickstream.inst = self
         super(Clickstream, self).__init__()
 
-        #The pretty name of the service
+        # The pretty name of the service
         self.pretty_name = "Clickstream"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = True
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
         self.mongo_dbname = "logs"
@@ -48,10 +48,10 @@ class Clickstream(base_service.BaseService):
         ingests = self.get_ingests()
         for ingest in ingests:
             if ingest['type'] == 'file':
-
                 self.start_ingest(ingest['id'])
                 utils.log("Importing from ingestor " + str(ingest['id']))
-                cmd = "mongoimport --quiet --host " + config.MONGO_HOST + " --db "+self.mongo_dbname+" --collection "+self.mongo_collectionname+" < "+ingest['meta']
+                cmd = config.MONGO_PATH + "mongoimport --host " + config.MONGO_HOST + " --db " + self.mongo_dbname + " --collection " + self.mongo_collectionname + " --file " + \
+                      ingest['meta']
                 os.system(cmd)
 
                 self.finish_ingest(ingest['id'])
@@ -64,13 +64,13 @@ def ensure_mongo_indexes():
     :return: None
     """
     utils.log("Setting index for countries")
-    cmd = "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
+    cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
     os.system(cmd)
     utils.log("Setting index for event-course")
-    cmd = "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {event_type: 1,'context.course_id': 1} )\""
+    cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {event_type: 1,'context.course_id': 1} )\""
     os.system(cmd)
     utils.log("Setting index for course")
-    cmd = "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {'context.course_id': 1} )\""
+    cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {'context.course_id': 1} )\""
     os.system(cmd)
 
 
@@ -85,24 +85,24 @@ def get_files(path):
     for existing in existings:
         if existing[2] == 'file':
             pathvars = existing[3].split('/')
-            ignore_dates.append(pathvars[len(pathvars)-2] + "/" + pathvars[len(pathvars)-1])
+            ignore_dates.append(pathvars[len(pathvars) - 2] + "/" + pathvars[len(pathvars) - 1])
 
     required_files = []
     main_path = os.path.realpath(os.path.join(path, 'clickstream_logs', 'latest'))
 
     # Changed for new clickstream format
-    #for subdir in os.listdir(main_path):
+    # for subdir in os.listdir(main_path):
     #    if os.path.isdir(os.path.join(main_path, subdir)):
     for filename in os.listdir(main_path):
         extension = os.path.splitext(filename)[1]
         if extension == '.log':
             pathvars = os.path.join(main_path, filename).split('/')
-            ignore_check = pathvars[len(pathvars)-2] + "/" + pathvars[len(pathvars)-1]
+            ignore_check = pathvars[len(pathvars) - 2] + "/" + pathvars[len(pathvars) - 1]
             if ignore_check not in ignore_dates:
                 required_files.append(os.path.join(main_path, filename))
             else:
                 pass
-                #print "IGNORING "+ignore_check
+                # print "IGNORING "+ignore_check
     maxdates = {}
     for required_file in required_files:
         dirname = os.path.dirname(required_file)

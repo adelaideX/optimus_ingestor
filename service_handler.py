@@ -188,7 +188,7 @@ def remove_all_data():
     pcourse_db.commit()
     log("*** Resetting ingestor cache")
     #Delete the mongoDB
-    cmd = "mongo " + config.MONGO_HOST + "/logs --eval \"db.dropDatabase()\""
+    cmd = config.MONGO_PATH + "mongo " + config.MONGO_HOST + "/logs --eval \"db.dropDatabase()\""
     os.system(cmd)
 
 
