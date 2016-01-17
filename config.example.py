@@ -17,6 +17,7 @@ IGNORE_SERVICES = ['extract_sample', 'eventcount', 'daily_count']
 OUTPUT_DIRECTORY = '/tmp'
 DATA_PATHS = ['/data/']
 EXPORT_PATH = '/Volumes/VMs/export'
+MONGO_PATH = '/usr/local/bin/'
 #The server where the course information is found
 SERVER_URL = 'http://dashboard.ceit.uq.edu.au'
 CLICKSTREAM_PREFIX = 'uqx-edx-events-'
