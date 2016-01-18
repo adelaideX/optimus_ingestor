@@ -69,7 +69,7 @@ class ServiceManager():
         except MySQLdb.OperationalError:
             self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='mysql', local_infile=1)
             cur = self.sql_db.cursor()
-            cur.execute("CREATE DATABASE API")
+            cur.execute("CREATE DATABASE api")
             self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='api', local_infile=1)
         if self.sql_db:
             log("Creating table API")
