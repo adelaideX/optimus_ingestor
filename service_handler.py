@@ -297,7 +297,9 @@ class Servicehandler():
         self.server_thread.start()
         #@todo remove this
         queue_data(self)
+        print "SLEEPING NOW"
         self.sleepmainthread()
+
 
     def sleepmainthread(self):
         """
