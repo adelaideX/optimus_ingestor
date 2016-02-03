@@ -63,13 +63,13 @@ class BaseService(object):
         The initialisation method, sets default status and begins the run loop
         """
         if self.enabled:
-            self.servicename = str(self.__class__.__name__).lower()
+            self.servicename = str(self.__class__.__name__).lower().strip()
             log("Starting service "+self.servicename)
             self.status = 'loading'
             self.setup_ingest_api()
             self.setup()
             while self.loop and ALIVE:
-                print "RUN LOOP FOR "+self.servicename
+                print "RUN LOOP FOR {0}".format(str(self.servicename).strip())
                 self.status = 'running'
                 self.run()
                 self.status = 'sleeping'

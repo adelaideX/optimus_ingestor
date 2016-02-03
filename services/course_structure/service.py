@@ -1,11 +1,14 @@
 """
 Service for parsing the XML course structure
 """
-import base_service
-import os
-import utils
+
 import json
 import xml.etree.ElementTree as ElTree
+
+import base_service
+import config
+import os
+import utils
 
 
 class CourseStructure(base_service.BaseService):
@@ -19,16 +22,16 @@ class CourseStructure(base_service.BaseService):
         CourseStructure.inst = self
         super(CourseStructure, self).__init__()
 
-        #The pretty name of the service
+        # The pretty name of the service
         self.pretty_name = "Course Structure"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = True
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
-        #The location to output course structure
+        # The location to output course structure
         self.outputdir = 'www/course_structure'
 
         self.initialize()
@@ -57,27 +60,30 @@ class CourseStructure(base_service.BaseService):
 
                 coursesplit = coursename.split("-")
                 term = coursesplit[-1]
-                #Parse the course
+                # Parse the course
                 coursefile = os.path.join(path, 'course', term + '.xml')
                 if not os.path.isfile(coursefile):
                     coursefile = os.path.join(path, 'course', 'course.xml')
                 try:
                     course = self.xml_unpack_file(coursefile)
                     course = self.add_linked_file_xml(path, course)
+
                     policyfileurl = os.path.join(path, 'policies', term, 'policy.json')
                     if not os.path.isfile(policyfileurl):
                         policyfileurl = os.path.join(path, 'policies', 'course', 'policy.json')
                     policyfile = open(policyfileurl).read()
                     policydata = json.loads(policyfile)
                     course['policy'] = policydata
-                    f = open(self.outputdir+'/'+coursename+'.json', 'w+')
-                    print self.outputdir+'/'+coursename+'.json'
+                    f = open(self.outputdir + '/' + coursename + '.json', 'w+')
+                    print self.outputdir + '/' + coursename + '.json'
                     f.write(json.dumps(course))
                 except IOError as e:
-                    print "COURSE STRUCTURE FILE DOES NOT EXIST "+str(coursefile)
+                    print "COURSE STRUCTURE FILE DOES NOT EXIST " + str(coursefile)
                     print e
+                    # except Exception as e:
+                    # print "FILE: " + str(coursefile) + "ERROR: " + str(e)
 
-                utils.log("Parsed "+coursename)
+                utils.log("Parsed " + coursename)
 
                 self.finish_ingest(ingest['id'])
 
@@ -121,8 +127,8 @@ class CourseStructure(base_service.BaseService):
             index = 0
             for child in xml_object['children']:
                 if len(child['children']) == 0 and 'url_name' in child:
-                    child_path = os.path.join(basepath, child['tag'], child['url_name']+'.xml')
-                    if os.path.isfile(child_path):
+                    child_path = os.path.join(basepath, child['tag'], child['url_name'] + '.xml')
+                    if os.path.isfile(child_path) and os.path.getsize(child_path) > 0:
                         child_obj = (self.xml_unpack_file(child_path))
                         for key in child_obj:
                             child[key] = child_obj[key]
@@ -137,8 +143,14 @@ def get_files(path):
     :param path: The path of the files
     :return: An array of file paths
     """
+
     required_files = []
     main_path = os.path.realpath(os.path.join(path, 'database_state', 'latest'))
+
+    # patch main_path to use child directory as we can't use symlink
+    if not config.SYMLINK_ENABLED:
+        main_path = utils.get_subdir(main_path)
+
     for subdir in os.listdir(main_path):
         if os.path.isdir(os.path.join(main_path, subdir)):
             required_files.append(os.path.join(main_path, subdir))

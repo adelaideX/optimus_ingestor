@@ -75,9 +75,12 @@ class PersonCourse(base_service.BaseService):
         last_timefinder = self.find_last_run_ingest("TimeFinder")
         last_iptocountry = self.find_last_run_ingest("IpToCountry")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
-        if self.finished_ingestion("TimeFinder") and last_run < last_timefinder and self.finished_ingestion(
-                "IpToCountry") and last_run < last_iptocountry and self.finished_ingestion(
-                "DatabaseState") and last_run < last_dbstate:
+        if self.finished_ingestion("TimeFinder") and \
+                        last_run < last_timefinder and \
+                self.finished_ingestion("IpToCountry") and \
+                        last_run < last_iptocountry and \
+                self.finished_ingestion("DatabaseState") and \
+                        last_run < last_dbstate:
             # Create 'cf_table'
             self.create_cf_table()
             # Clean 'pc_table'
@@ -175,7 +178,7 @@ class PersonCourse(base_service.BaseService):
                 # Set LoE, YoB, gender based on the data in {auth_userprofile}
                 utils.log("{auth_userprofile}")
                 query = "SELECT user_id, year_of_birth, level_of_education, gender FROM auth_userprofile WHERE user_id in (" + ",".join(
-                    ["%s"] * len(user_id_list)) + ")"
+                        ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()
@@ -188,7 +191,7 @@ class PersonCourse(base_service.BaseService):
                 # Set certified based on the data in {certificates_generatedcertificate}
                 utils.log("{certificates_generatedcertificate}")
                 query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id in (" + ",".join(
-                    ["%s"] * len(user_id_list)) + ")"
+                        ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()
@@ -200,7 +203,7 @@ class PersonCourse(base_service.BaseService):
                 # Set start_time based on the data in {student_courseenrollment}
                 utils.log("{student_courseenrollment}")
                 query = "SELECT user_id, created, mode FROM student_courseenrollment WHERE user_id in (" + ",".join(
-                    ["%s"] * len(user_id_list)) + ")"
+                        ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()

@@ -2,6 +2,7 @@
 Service for importing discussion forum data
 """
 import base_service
+import config
 import os
 import utils
 from pymongo import MongoClient
@@ -186,6 +187,11 @@ def get_files(path):
     """
     required_files = []
     main_path = os.path.realpath(os.path.join(path, 'database_state', 'latest'))
+
+    # patch main_path to use child directory as we can't use symlink
+    if not config.SYMLINK_ENABLED:
+        main_path = utils.get_subdir(main_path)
+
     for filename in os.listdir(main_path):
         extension = os.path.splitext(filename)[1]
         if extension == '.mongo':

@@ -27,3 +27,16 @@ def log(message):
     the_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_message = the_time + ":" + " " + message
     the_log.info(log_message)
+
+
+# get first child dir name of current
+def get_subdir(a_dir):
+    """
+    Returns the path of the first child directory found in the main-path
+    :param a_dir: The main path
+    :rtype: string
+    """
+    for d in os.listdir(a_dir):
+        p = os.path.join(a_dir, d)
+        if os.path.isdir(p):
+            return p
