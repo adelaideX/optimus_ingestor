@@ -6,6 +6,7 @@ EDX_DATABASES = {
     'Code101x_2T2015': {'dbname': 'AdelaideX_Code101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Code101x+2T2015', 'discussiontable': 'AdelaideX-Code101x-2T2015-prod', 'icon': 'fa-heart', 'year': '2015'},
     'Code101x_3T2015': {'dbname': 'AdelaideX_Code101x_3T2015', 'mongoname': 'course-v1:AdelaideX+Code101x+3T2015', 'discussiontable': 'AdelaideX-Code101x-3T2015-prod', 'icon': 'fa-coffee', 'year': '2015'},
     'Cyber101x_2T2015': {'dbname': 'AdelaideX_Cyber101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Cyber101x+2T2015', 'discussiontable': 'AdelaideX-Cyber101x-2T2015-prod', 'icon': 'fa-beer', 'year': '2015'},
+    'Cyber101x_1T2016': {'dbname': 'AdelaideX_Cyber101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Cyber101x+1T2016', 'discussiontable': 'AdelaideX-Cyber101x-1T2016-prod', 'icon': 'fa-beer', 'year': '2016'},
     'Entrep101X_1T2016': {'dbname': 'AdelaideX_Entrep101X_1T2016', 'mongoname': 'course-v1:AdelaideX+Entrep101X+1T2016', 'discussiontable': 'AdelaideX-Entrep101X-1T2016-prod', 'icon': 'fa-bullseye', 'year': '2016'},
     'HumBio101x_1T2015': {'dbname': 'AdelaideX_HumBio101x_1T2015', 'mongoname': 'AdelaideX/HumBio101x/1T2015', 'discussiontable': 'AdelaideX-HumBio101x-1T2015-prod', 'icon': 'fa-users', 'year': '2015'},
     'HumBio101x_2T2015': {'dbname': 'AdelaideX_HumBio101x_2T2015', 'mongoname': 'course-v1:AdelaideX+HumBio101x+2T2015', 'discussiontable': 'AdelaideX-HumBio101x-2T2015-prod', 'icon': 'fa-group', 'year': '2015'},
@@ -14,6 +15,7 @@ EDX_DATABASES = {
     'Project101x_1T2016': {'dbname': 'AdelaideX_Project101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Project101x+1T2016', 'discussiontable': 'AdelaideX-Project101x-1T2016-prod', 'icon': 'fa-calendar', 'year': '2016'},
     'Wine101x_2T2015': {'dbname': 'AdelaideX_Wine101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015', 'discussiontable': 'AdelaideX-Wine101x-2T2015-prod', 'icon': 'fa-glass', 'year': '2015'},
     'Wine101x_2T2015_2': {'dbname': 'AdelaideX_Wine101x_2T2015_2', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015.2', 'discussiontable': 'AdelaideX-Wine101x-2T2015-2-prod', 'icon': 'fa-flask', 'year': '2015'},
+    'Wine101x_1T2016': {'dbname': 'AdelaideX_Wine101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Wine101x+1T2016', 'discussiontable': 'AdelaideX-Wine101x-1T2016-prod', 'icon': 'fa-flask', 'year': '2016'},
 }
 
 for DB in EDX_DATABASES:
