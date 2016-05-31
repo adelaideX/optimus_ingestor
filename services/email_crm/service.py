@@ -364,7 +364,7 @@ def get_files(path):
         main_path = utils.get_subdir(main_path)
 
     for filename in os.listdir(main_path):
-        if filename == "adelaidex-email_opt_in-prod-analytics.csv":
+        if filename == config.DBSTATE_PREFIX.lower() + "email_opt_in-prod-analytics.csv":
             required_files.append(os.path.join(main_path, filename))
             break
     return required_files
