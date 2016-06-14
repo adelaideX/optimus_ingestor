@@ -78,7 +78,7 @@ class EmailCRM(base_service.BaseService):
             ingests = self.get_ingests()
             for ingest in ingests:
                 if ingest['type'] == 'file':
-                    print "we have an email file not started or completed! " + ingest['meta']
+                    # print "ingesting " + ingest['meta']
 
                     self.start_ingest(ingest['id'])
                     path = ingest['meta']
@@ -91,6 +91,9 @@ class EmailCRM(base_service.BaseService):
 
                     # export the file
                     self.datadump2csv()
+
+                    # update the ingest record
+                    self.finish_ingest(ingest['id'])
 
             self.save_run_ingest()
             utils.log("EmailCRM completed")
@@ -227,21 +230,6 @@ class EmailCRM(base_service.BaseService):
 
         return ingests
 
-    def start_ingest(self, ingest_id):
-        """
-        Starts an ingestion entry
-        :param ingest_id: the ID of the ingestion entry
-        """
-        cur = self.api_db.cursor()
-        current_date = time.strftime('%Y-%m-%d %H:%M:%S')
-        query = "UPDATE ingestor " \
-                " SET started=1, completed=1, started_date='" + current_date + "' WHERE id=" + str(ingest_id) + ";"
-        cur.execute(query)
-        self.api_db.commit()
-        cur.close()
-
-        pass
-
     def datadump2csv(self):
         """
         Generates a CSV file for CRM
@@ -250,7 +238,7 @@ class EmailCRM(base_service.BaseService):
 
         print "Exporting CSV: " + e_tablename
         if self.sql_ec_conn is None:
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, "Email_CRM", True)
+            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
 
         backup_path = config.EXPORT_PATH
         current_time = time.strftime('%m%d%Y-%H%M%S')
@@ -276,15 +264,16 @@ class EmailCRM(base_service.BaseService):
                     continue
                 nice_name = courseinfo['display_name']
 
-                query = "SELECT up.user_id AS user_id, au.is_staff AS is_staff, " \
-                        "au.is_active AS is_active, au.last_login AS last_login, e.email AS email, " \
+                query = "SELECT up.user_id, au.is_staff, " \
+                        "au.is_active, au.last_login, e.email, " \
+                        "pc.viewed, pc.explored, pc.certified, pc.mode, " \
                         "substring_index(substring_index(e.full_name, ' ', 1), ' ', -( 1 )) AS first_name, " \
                         "trim(substr(e.full_name, locate(' ', e.full_name))) AS last_name, " \
-                        "" + "'" + course_id + "'" + " AS course_id, " \
-                        "" + "'" + nice_name + "'" + " AS course_name, " \
-                        "e.is_opted_in_for_email AS is_opted_in_for_email, " \
-                        "up.gender AS gender, up.year_of_birth AS year_of_birth, " \
-                        "up.level_of_education AS level_of_education, " \
+                        "'{2}' AS course_id, " \
+                        "'{3}' AS course_name, " \
+                        "e.is_opted_in_for_email, " \
+                        "up.gender, up.year_of_birth, " \
+                        "up.level_of_education, " \
                         "( CASE up.level_of_education " \
                         "WHEN 'p' THEN 'Doctorate' " \
                         "WHEN 'a' THEN 'Associate degree' " \
@@ -299,16 +288,17 @@ class EmailCRM(base_service.BaseService):
                         "WHEN 'p_se' THEN 'Doctorate in science or engineering (no longer used)' " \
                         "WHEN 'p_oth' THEN 'Doctorate in another field (no longer used)' " \
                         "ELSE 'User did not specify level of education' END ) AS levelofEd, " \
-                        "up.country AS country, " \
+                        "up.country, " \
                         "( CASE c.`Common Name` " \
                         "WHEN 'British Sovereign Base Areas' THEN '' " \
                         "ELSE c.`Common Name` END )AS country_name " \
                         "FROM {0}.auth_user au " \
-                        "JOIN emailcrm e ON au.email = e.email " \
+                        "JOIN {4}.emailcrm e ON au.email = e.email " \
+                        "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
-                        "LEFT JOIN iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
+                        "LEFT JOIN {4}.iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
                         "AND c.Type = 'Independent State' " \
-                        "WHERE e.course_id = '{1}' ".format(dbname.lower(), mongoname)
+                        "WHERE e.course_id = '{1}' ".format(dbname.lower(), mongoname, course_id, nice_name, self.ec_db)
 
                 ec_cursor = self.sql_ec_conn.cursor()
                 ec_cursor.execute(query)
@@ -338,7 +328,7 @@ class EmailCRM(base_service.BaseService):
         :param json_file: the name of the course structure file
         :return the course information
         """
-        print self
+        # print self
         courseurl = config.SERVER_URL + '/datasources/course_structure/' + json_file
         print "ATTEMPTING TO LOAD " + courseurl
         courseinfofile = urllib2.urlopen(courseurl)
