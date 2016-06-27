@@ -1,10 +1,13 @@
+# coding=utf-8
 """
 Service for importing the email extract from edx
 """
-import csv
 import json
 import time
 import urllib2
+from datetime import datetime
+
+import unicodecsv as csv
 
 import config
 import os
@@ -68,7 +71,8 @@ class EmailCRM(base_service.BaseService):
         """
         last_run = self.find_last_run_ingest("EmailCRM")
         last_personcourse = self.find_last_run_ingest("PersonCourse")
-        if self.find_last_run_ingest("PersonCourse") and last_run < last_personcourse:
+
+        if self.finished_ingestion("PersonCourse") and last_run < last_personcourse:
 
             # Create 'ec_table'
             self.create_ec_table()
@@ -127,7 +131,7 @@ class EmailCRM(base_service.BaseService):
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " " \
-                "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
+            "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
@@ -167,7 +171,7 @@ class EmailCRM(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_email (`email`, `course_id`)) DEFAULT CHARSET=utf8;"
+        query += " KEY idx_email_course (`email`, `course_id`)) DEFAULT CHARSET=utf8;"
 
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
@@ -216,7 +220,7 @@ class EmailCRM(base_service.BaseService):
         cur = self.api_db.cursor()
         query = "SELECT * FROM ingestor" \
                 " WHERE service_name = '" + str(self.__class__.__name__) + "' " \
-                " AND completed = 0 ORDER BY created ASC;"
+                                                                           " AND completed = 0 ORDER BY created ASC;"
         cur.execute(query)
         ingests = []
         for row in cur.fetchall():
@@ -250,7 +254,7 @@ class EmailCRM(base_service.BaseService):
         backup_prefix = e_tablename + "_" + current_time
         backup_file = os.path.join(backup_path, backup_prefix + ".csv")
 
-        for i, course in enumerate(self.courses.items()):
+        for idx, course in enumerate(self.courses.items()):
             try:
                 course_id = course[0]
                 mongoname = course[1]['mongoname']
@@ -263,14 +267,20 @@ class EmailCRM(base_service.BaseService):
                     utils.log("Can not find course info for ." + str(course_id))
                     continue
                 nice_name = courseinfo['display_name']
+                start = courseinfo['start'].split('T')
+                start_date = datetime.strptime(start[0].replace('"', ''), "%Y-%m-%d")
+                start_date.strftime("%d/%m/%Y")
+
+                # au.last_login,
 
                 query = "SELECT up.user_id, au.is_staff, " \
-                        "au.is_active, au.last_login, e.email, " \
+                        "au.is_active, e.email, " \
                         "pc.viewed, pc.explored, pc.certified, pc.mode, " \
                         "substring_index(substring_index(e.full_name, ' ', 1), ' ', -( 1 )) AS first_name, " \
                         "trim(substr(e.full_name, locate(' ', e.full_name))) AS last_name, " \
                         "'{2}' AS course_id, " \
                         "'{3}' AS course_name, " \
+                        "'{5}' AS course_start_date, " \
                         "e.is_opted_in_for_email, " \
                         "up.gender, up.year_of_birth, " \
                         "up.level_of_education, " \
@@ -298,24 +308,24 @@ class EmailCRM(base_service.BaseService):
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
                         "LEFT JOIN {4}.iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
                         "AND c.Type = 'Independent State' " \
-                        "WHERE e.course_id = '{1}' ".format(dbname.lower(), mongoname, course_id, nice_name, self.ec_db)
+                        "WHERE e.course_id = '{1}' ".format(dbname.lower(), mongoname, course_id, nice_name, self.ec_db, start_date)
 
                 ec_cursor = self.sql_ec_conn.cursor()
                 ec_cursor.execute(query)
                 result = ec_cursor.fetchall()
                 ec_cursor.close()
 
-                if i == 0:
-                    with open(backup_file, "w") as csv_file:
-                        csv_writer = csv.writer(csv_file, dialect='excel')
+                if idx == 0:
+                    with open(backup_file, "wb") as csv_file:
+                        csv_writer = csv.writer(csv_file, dialect='excel', encoding='utf-8')
                         csv_writer.writerow([i[0] for i in ec_cursor.description])  # write headers
-                        for record in result:
-                            csv_writer.writerow(record)
+                        for row in result:
+                            csv_writer.writerow(row)
                 else:
-                    with open(backup_file, "a") as csv_file:
-                        csv_writer = csv.writer(csv_file, dialect='excel')
-                        for record in result:
-                            csv_writer.writerow(record)
+                    with open(backup_file, "ab") as csv_file:
+                        csv_writer = csv.writer(csv_file, dialect='excel', encoding='utf-8')
+                        for row in result:
+                            csv_writer.writerow(row)
 
             except self.sql_ec_conn.ProgrammingError:
                 pass
@@ -356,7 +366,7 @@ def get_files(path):
     for filename in os.listdir(main_path):
         if filename == config.DBSTATE_PREFIX.lower() + "email_opt_in-prod-analytics.csv":
             required_files.append(os.path.join(main_path, filename))
-            break
+            break  # only one email file, once found exit the search
     return required_files
 
 
