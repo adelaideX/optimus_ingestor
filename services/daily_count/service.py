@@ -85,11 +85,11 @@ class DailyCount(base_service.BaseService):
                 print "RUNNNNING"
                 print course
 
-                user_events = self.mongo_collection.aggregate([
+                user_events = list(self.mongo_collection.aggregate([
                     {"$match": {"context.course_id": course['mongoname']}},
-                    {"$sort": {"time": 1}},
+                    # {"$sort": {"time": 1}},
                     {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"}, "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
-                ], allowDiskUse=True)['result']
+                ], allowDiskUse=True))  # ['result']
                 print "WEEE"
                 print user_events
                 print "XXXX"

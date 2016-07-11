@@ -24,13 +24,13 @@ class IPToCountry(base_service.BaseService):
         IPToCountry.inst = self
         super(IPToCountry, self).__init__()
 
-        #The pretty name of the service
+        # The pretty name of the service
         self.pretty_name = "IP To Country"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = True
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
         self.mongo_client = None
@@ -39,7 +39,7 @@ class IPToCountry(base_service.BaseService):
         self.ipfield = 'ip'
 
         self.geo_reader = None
-        self.city_reader = None        
+        self.city_reader = None
         self.initialize()
 
     pass
@@ -48,8 +48,8 @@ class IPToCountry(base_service.BaseService):
         """
         Set initial variables before the run loop starts
         """
-         # self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoIP2-Country.mmdb')
-        self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoLite2-Country.mmdb')
+        # self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoIP2-Country.mmdb')
+        self.geo_reader = geoip2.database.Reader(basepath + '/lib/GeoLite2-Country.mmdb')
         pass
 
     def run(self):
@@ -70,36 +70,47 @@ class IPToCountry(base_service.BaseService):
                     mongo_collection = self.mongo_db[collection]
                     if mongo_collection:
                         utils.log("CHECKING COUNTRY")
-                        toupdates = mongo_collection.find({self.ipfield: {'$exists': True}, 'country': {'$exists': False}})
+                        # to speed up - add an geo_attempt flag so we don't check errors or bad ips again
+                        toupdates = mongo_collection.find(
+                            {self.ipfield: {'$exists': True}, 'country': {'$exists': False},
+                             'geo_attempt': {'$exists': False}})
                         utils.log("FOUND COUNTRY")
                         i = 0
                         total = toupdates.count()
-                        #for toupdate in toupdates:
+                        # for toupdate in toupdates:
                         #    total += 1
                         for toupdate in toupdates:
                             if toupdate[self.ipfield] != '::1' and toupdate[self.ipfield] != '':
                                 try:
                                     country = self.geo_reader.country(toupdate[self.ipfield])
                                     isocountry = country.country.iso_code
-                                    isosubdiv=None
-                                    if isocountry=='AU':
+                                    isosubdiv = None
+                                    if isocountry == 'AU':
                                         if self.city_reader is None:
-                                            self.city_reader=geoip2.database.Reader(basepath+'/lib/GeoLite2-City.mmdb')
-                                        city=self.city_reader.city(toupdate[self.ipfield])
-                                        isosubdiv=city.subdivisions.most_specific.iso_code
+                                            self.city_reader = geoip2.database.Reader(
+                                                basepath + '/lib/GeoLite2-City.mmdb')
+                                        city = self.city_reader.city(toupdate[self.ipfield])
+                                        isosubdiv = city.subdivisions.most_specific.iso_code
+                                        cityname = city.city.name
                                     if isosubdiv is not None:
-                                        mongo_collection.update({"_id": toupdate['_id']}, {"$set": {"country": isocountry, "subdivision": isosubdiv}})
+                                        mongo_collection.update({"_id": toupdate['_id']}, {
+                                            "$set": {"country": isocountry, "subdivision": isosubdiv,
+                                                     "city": cityname}})
                                     else:
-                                        mongo_collection.update({"_id": toupdate['_id']}, {"$set": {"country": isocountry}})
-                                    print "*** ADDING ADDRESS "+str(i)+" / "+str(total)
+                                        mongo_collection.update({"_id": toupdate['_id']},
+                                                                {"$set": {"country": isocountry}})
+                                    print "*** ADDING ADDRESS " + str(i) + " / " + str(total)
                                 except AddressNotFoundError:
-                                    #utils.log("Could not find address for " + str(toupdate))
+                                    # utils.log("Could not find address for " + str(toupdate))
+                                    mongo_collection.update({"_id": toupdate['_id']},
+                                                            {"$set": {"geo_attempt": 1}})
                                     pass
                             else:
-                                mongo_collection.update({"_id": ObjectId(toupdate['_id'])}, {"$set": {"country": ""}})
+                                mongo_collection.update({"_id": ObjectId(toupdate['_id'])},
+                                                        {"$set": {"country": "", "geo_attempt": 1}})
                             i += 1
-                utils.log("FINISHED COUNTRY")
-                self.save_run_ingest()
+                        utils.log("FINISHED COUNTRY")
+                        self.save_run_ingest()
 
         pass
 

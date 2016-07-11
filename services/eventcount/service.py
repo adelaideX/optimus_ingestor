@@ -1,15 +1,16 @@
 """
 Service for importing the edX clickstream
 """
-import base_service
-import os
-import utils
-import time
-import config
-import urllib2
+
 import json
-from pymongo import MongoClient
+import time
+import urllib2
 from datetime import datetime
+
+import base_service
+import config
+import utils
+from pymongo import MongoClient
 
 
 class Eventcount(base_service.BaseService):
@@ -277,7 +278,7 @@ def ensure_mongo_indexes():
     """
     utils.log("Setting index for countries")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
-    #os.system(cmd)
+    # os.system(cmd)
 
 
 def get_files(path):

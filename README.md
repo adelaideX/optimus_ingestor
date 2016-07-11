@@ -83,6 +83,12 @@ The optimus ingestor will also generate course structure data (inside the www di
 ln -s [BASE_PATH]/www [HTDOCS_PATH]/datasources
 ```
 
+To use this symlink with selinux you will need to grant permission explicitly
+
+```
+sudo chcon -R -t httpd_sys_content_t /yourpath/tosymlink/www
+```
+
 Extraction Example
 ---------------------
 The optimus ingestor does not deal with the initial extraction of data from the edX s3 repository.  However an example script (based on the UQx extraction process)

@@ -10,7 +10,6 @@ import config
 import os
 import utils
 
-
 class CourseStructure(base_service.BaseService):
     """
     Converts the XML course structure to JSON

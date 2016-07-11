@@ -29,32 +29,32 @@ class BaseService(object):
 
     def __init__(self):
 
-        #Auto variables
-        #The lowercase name of the service
+        # Auto variables
+        # The lowercase name of the service
         self.servicename = ""
-        #The current state of the service
+        # The current state of the service
         self.status = 'stopped'
-        #The last time the service was running
+        # The last time the service was running
         self.last_awake = ''
-        #The database for doing ingestor system calls
+        # The database for doing ingestor system calls
         self.api_db = None
-        #The database for doing ingestion calls (service specific)
+        # The database for doing ingestion calls (service specific)
         self.sql_db = None
-        #The current task
+        # The current task
         self.task = ""
-        #The current progress
+        # The current progress
         self.task_progress = 0
-        #The amount of total progress for the current task
+        # The amount of total progress for the current task
         self.task_progress_total = 0
 
-        #Overriden variables
-        #The pretty name of the service
+        # Overriden variables
+        # The pretty name of the service
         self.pretty_name = "Unknown Service"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = False
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
     # Starting the base service
@@ -64,7 +64,7 @@ class BaseService(object):
         """
         if self.enabled:
             self.servicename = str(self.__class__.__name__).lower().strip()
-            log("Starting service "+self.servicename)
+            log("Starting service " + self.servicename)
             self.status = 'loading'
             self.setup_ingest_api()
             self.setup()
@@ -75,13 +75,13 @@ class BaseService(object):
                 self.status = 'sleeping'
                 self.last_awake = time.strftime('%Y-%m-%d %H:%M:%S')
                 time.sleep(self.sleep_time)
-            print "Service finished "+self.servicename
+            print "Service finished " + self.servicename
 
     def setup(self):
         """
         Setup function, this should be overridden by the service
         """
-        log("BAD METHOD, SETUP SHOULD BE SUBCLASSED IN "+self.servicename)
+        log("BAD METHOD, SETUP SHOULD BE SUBCLASSED IN " + self.servicename)
 
     def run(self):
         """
@@ -118,7 +118,7 @@ class BaseService(object):
         """
         self.setup_ingest_api()
         cur = self.api_db.cursor()
-        query = "SELECT * FROM ingestor WHERE service_name = '" + service_name + "' AND started = 1 AND completed = 1 ORDER BY created DESC limit 1;"
+        query = "SELECT * FROM ingestor WHERE service_name = '" + service_name + "' AND started = 1 AND completed = 1 ORDER BY created DESC LIMIT 1;"
         cur.execute(query)
         date = datetime.datetime.fromtimestamp(0)
         for row in cur.fetchall():
@@ -148,7 +148,8 @@ class BaseService(object):
         """
         self.setup_ingest_api()
         cur = self.api_db.cursor()
-        query = "SELECT * FROM ingestor WHERE service_name = '" + str(self.__class__.__name__) + "' AND started = 0 AND completed = 0 ORDER BY created ASC;"
+        query = "SELECT * FROM ingestor WHERE service_name = '" + str(
+            self.__class__.__name__) + "' AND started = 0 AND completed = 0 ORDER BY created ASC;"
         cur.execute(query)
         ingests = []
         for row in cur.fetchall():
@@ -180,7 +181,8 @@ class BaseService(object):
         """
         cur = self.api_db.cursor()
         current_date = time.strftime('%Y-%m-%d %H:%M:%S')
-        query = "UPDATE ingestor SET completed=1, completed_date='" + current_date + "' WHERE id=" + str(ingest_id) + ";"
+        query = "UPDATE ingestor SET completed=1, completed_date='" + current_date + "' WHERE id=" + str(
+            ingest_id) + ";"
         cur.execute(query)
         self.api_db.commit()
         pass
@@ -218,8 +220,7 @@ class BaseService(object):
         results = []
         if self.sql_db:
             cur = self.sql_db.cursor()
-            #tim
-            print query
+            # print query
             cur.execute(query)
             for row in cur.fetchall():
                 results.append(row)
@@ -248,11 +249,11 @@ class BaseService(object):
         """
         course_dict = config_courses.EDX_DATABASES
         if 'default' in course_dict:
-            del(course_dict['default'])
+            del (course_dict['default'])
         if 'personcourse' in course_dict:
-            del(course_dict['personcourse'])
+            del (course_dict['personcourse'])
         if 'Course_Event' in course_dict:
-            del(course_dict['Course_Event'])
+            del (course_dict['Course_Event'])
         return course_dict
 
     @staticmethod
@@ -283,13 +284,15 @@ class BaseService(object):
         print self
         if sql_connect is None or force_reconnect:
             try:
-                sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db=db_name, local_infile=1)
+                sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME,
+                                              passwd=config.SQL_PASSWORD, db=db_name, local_infile=1, charset='utf8')
                 return sql_connect
             except Exception, e:
                 # Create the database
                 if e[0] and create_db and db_name != "":
                     if sql_connect is None:
-                        sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, local_infile=1)
+                        sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME,
+                                                      passwd=config.SQL_PASSWORD, local_infile=1, charset='utf8')
                     log("Creating database " + db_name)
 
                     cur = sql_connect.cursor()

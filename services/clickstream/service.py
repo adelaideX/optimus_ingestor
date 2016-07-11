@@ -1,6 +1,8 @@
 """
 Service for importing the edX clickstream
 """
+import subprocess
+
 import base_service
 import os
 import utils
@@ -50,11 +52,15 @@ class Clickstream(base_service.BaseService):
             if ingest['type'] == 'file':
                 self.start_ingest(ingest['id'])
                 utils.log("Importing from ingestor " + str(ingest['id']))
-                cmd = config.MONGO_PATH + "mongoimport --host " + config.MONGO_HOST + " --db " + self.mongo_dbname + " --collection " + self.mongo_collectionname + " --file " + \
+                try:
+                    cmd = config.MONGO_PATH + "mongoimport --host " + config.MONGO_HOST + " --db " + self.mongo_dbname + " --collection " + self.mongo_collectionname + " --file " + \
                       ingest['meta']
-                os.system(cmd)
-
-                self.finish_ingest(ingest['id'])
+                    # subprocess.call(cmd)
+                    os.system(cmd)
+                    self.finish_ingest(ingest['id'])
+                except Exception as e:
+                    utils.log("Importing failed " + str(ingest['id']) + ' ' + e.output)
+                    pass
         pass
 
 
@@ -65,13 +71,13 @@ def ensure_mongo_indexes():
     """
     utils.log("Setting index for countries")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
-    os.system(cmd)
+    #os.system(cmd)
     utils.log("Setting index for event-course")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {event_type: 1,'context.course_id': 1} )\""
-    os.system(cmd)
+    #os.system(cmd)
     utils.log("Setting index for course")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {'context.course_id': 1} )\""
-    os.system(cmd)
+    #os.system(cmd)
 
 
 def get_files(path):

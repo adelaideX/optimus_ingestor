@@ -75,6 +75,32 @@ class PersonCourse(base_service.BaseService):
         last_timefinder = self.find_last_run_ingest("TimeFinder")
         last_iptocountry = self.find_last_run_ingest("IpToCountry")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
+
+        # if self.finished_ingestion("TimeFinder"):
+        #     print "finished TimeFinder"
+        # else:
+        #     print "bad timefinder"
+        # if last_run < last_timefinder:
+        #     print "last_run < last_timefinder"
+        # else:
+        #     print "bad timefinder"
+        # if self.finished_ingestion("IpToCountry"):
+        #     print "IptoCountry finished"
+        # else:
+        #     print "bad ipcountry"
+        # if last_run < last_iptocountry:
+        #     print "last_run < last_iptocountry"
+        # else:
+        #     print "bad ipcountry"
+        # if self.finished_ingestion("DatabaseState"):
+        #     print "finished database state"
+        # else:
+        #     print "bad dbstate"
+        # if last_run < last_dbstate:
+        #     print "last_run < last_dbstate"
+        # else:
+        #     print "bad dbstate"
+
         if self.finished_ingestion("TimeFinder") and \
                         last_run < last_timefinder and \
                 self.finished_ingestion("IpToCountry") and \
@@ -118,7 +144,6 @@ class PersonCourse(base_service.BaseService):
                 # Set cf_item course_close_date
                 if 'end' in courseinfo:
                     try:
-                        # missing replace call Tim Cavanagh 05/01/2016
                         course_close_time = dateutil.parser.parse(courseinfo['end'].replace('"', ""))
                         course_close_date = course_close_time.date()
                         cf_item.set_course_close_date(course_close_date)
@@ -178,7 +203,7 @@ class PersonCourse(base_service.BaseService):
                 # Set LoE, YoB, gender based on the data in {auth_userprofile}
                 utils.log("{auth_userprofile}")
                 query = "SELECT user_id, year_of_birth, level_of_education, gender FROM auth_userprofile WHERE user_id in (" + ",".join(
-                        ["%s"] * len(user_id_list)) + ")"
+                    ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()
@@ -191,7 +216,7 @@ class PersonCourse(base_service.BaseService):
                 # Set certified based on the data in {certificates_generatedcertificate}
                 utils.log("{certificates_generatedcertificate}")
                 query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id in (" + ",".join(
-                        ["%s"] * len(user_id_list)) + ")"
+                    ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()
@@ -203,7 +228,7 @@ class PersonCourse(base_service.BaseService):
                 # Set start_time based on the data in {student_courseenrollment}
                 utils.log("{student_courseenrollment}")
                 query = "SELECT user_id, created, mode FROM student_courseenrollment WHERE user_id in (" + ",".join(
-                        ["%s"] * len(user_id_list)) + ")"
+                    ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
                 result = course_cursor.fetchall()
@@ -234,7 +259,8 @@ class PersonCourse(base_service.BaseService):
                 # Set ndays_act and viewed based on the data in {courseware_studentmodule}
                 try:
                     utils.log("{ndays_act: courseware_studentmodule}")
-                    query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule GROUP BY student_id"
+                    # query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule GROUP BY student_id"
+                    query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule WHERE student_id is not null GROUP BY student_id"
                     course_cursor.execute(query)
                     result = course_cursor.fetchall()
                     for record in result:
@@ -292,20 +318,21 @@ class PersonCourse(base_service.BaseService):
                 self.mongo_collectionname = course['discussiontable']
                 self.connect_to_mongo(self.mongo_dbname, self.mongo_collectionname)
                 # Change call for new API code Tim Cavanagh 05/01/2016
-                user_posts = list(self.mongo_collection.aggregate([
-                    # {"$match": {"author_id": {"$in": user_id_list}}}
-                    {"$group": {"_id": "$author_id", "postSum": {"$sum": 1}}}
-                ]))
+                pipeline = [{"$group": {"_id": "$author_id", "postSum": {"$sum": 1}}}]
+
+                user_posts = self.mongo_collection.aggregate(pipeline, allowDiskUse=True)
 
                 for item in user_posts:
-                    if "_id" in item and item["_id"] != None:
+                    if "_id" in item and item["_id"] is not None:
                         user_id = int(item["_id"])
                         if user_id in pc_dict:
                             pc_dict[user_id].set_nforum_posts(item['postSum'])
                         else:
-                            utils.log("Author id: %s does not exist in {auth_user}." % user_id)
+                            utils.log("Author id: %s does not exist in %s {auth_user}." % (
+                            user_id, self.mongo_collectionname))
                     else:
-                        utils.log("Author id: %s does not exist in {auth_user}." % user_id)
+                        utils.log(
+                            "Author id: %s does not exist in %s {auth_user}." % (user_id, self.mongo_collectionname))
 
                 # Tracking logs
                 utils.log("{logs}")
@@ -315,12 +342,18 @@ class PersonCourse(base_service.BaseService):
                 self.connect_to_mongo(self.mongo_dbname, self.mongo_collectionname)
 
                 # Change call for new API code Tim Cavanagh 05/01/2016
+                # pipeline1 = [{"$match": {"context.course_id": pc_course_id, "context.user_id": {"$ne": None}}},
+                #              {"$sort": {"time": 1}},
+                #              {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"},
+                #                          "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}]
+                # user_events = self.mongo_collection.aggregate(pipeline1, allowDiskUse=True)
+
                 user_events = list(self.mongo_collection.aggregate([
-                    {"$match": {"context.course_id": pc_course_id}},
-                    {"$sort": {"time": 1}},
-                    {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"},
-                                "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
+                    {"$match": {"context.course_id": pc_course_id, "context.user_id": {"$ne": None}}},
+                    # {"$sort": {"time": 1}},
+                    {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"}, "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
                 ], allowDiskUse=True))
+                # ['result']
 
                 for item in user_events:
                     user_id = item["_id"]
@@ -329,7 +362,7 @@ class PersonCourse(base_service.BaseService):
                         pc_dict[user_id].set_nevents(item["eventSum"])
                         pc_dict[user_id].set_final_cc_cname(item["countrySet"])
                     else:
-                        utils.log("Context.user_id: %s does not exist in {auth_user}." % user_id)
+                        utils.log("Context.user_id: %s does not exist in %s {auth_user}." % (user_id, pc_course_id))
 
                 # Set cf_item nregistered_students, nviewed_students, nexplored_students, ncertified_students
                 nregistered_students = sum(pc_item.registered for pc_item in pc_dict.values())
@@ -566,7 +599,7 @@ class PersonCourse(base_service.BaseService):
         Generates a CSV file for each course in the derived datasets
         :param tablename: The tablename to use
         """
-        print tablename
+        print "Exporting CSV: " + tablename
         if self.sql_pc_conn is None:
             self.sql_pc_conn = self.connect_to_sql(self.sql_pc_conn, "Person_Course", True)
         pc_cursor = self.sql_pc_conn.cursor()

@@ -20,13 +20,13 @@ class DatabaseState(base_service.BaseService):
         DatabaseState.inst = self
         super(DatabaseState, self).__init__()
 
-        #The pretty name of the service
+        # The pretty name of the service
         self.pretty_name = "Database State"
-        #Whether the service is enabled
+        # Whether the service is enabled
         self.enabled = True
-        #Whether to run more than once
+        # Whether to run more than once
         self.loop = True
-        #The amount of time to sleep in seconds
+        # The amount of time to sleep in seconds
         self.sleep_time = 60
 
         self.initialize()
@@ -52,19 +52,20 @@ class DatabaseState(base_service.BaseService):
                 path = ingest['meta']
                 file_name = os.path.basename(path)
 
-                #find the tablename
+                # find the tablename
                 table_name = file_name[file_name.find(config.DBSTATE_PREFIX):]
+
                 if table_name.find('-prod-edge-analytics.sql') != -1:
-                  table_name = table_name[:table_name.find('-prod-edge-analytics.sql')]
+                    table_name = table_name[:table_name.find('-prod-edge-analytics.sql')]
                 if table_name.find('-prod-analytics.sql') != -1:
-                  table_name = table_name[:table_name.find('-prod-analytics.sql')]
+                    table_name = table_name[:table_name.find('-prod-analytics.sql')]
                 database_name = table_name.split("-")
-                table_name = database_name[len(database_name)-1]
+                table_name = database_name[len(database_name) - 1]
                 database_name = '_'.join(database_name)
-                database_name = database_name.replace("_"+table_name, "").replace(".","")
+                database_name = database_name.replace("_" + table_name, "").replace(".", "")
 
                 table_name = table_name
-                tmp_table_name = "tmp_"+table_name
+                tmp_table_name = "tmp_" + table_name
 
                 ingest_file = open(path)
 
