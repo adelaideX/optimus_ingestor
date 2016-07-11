@@ -205,13 +205,13 @@ class DailyCount(base_service.BaseService):
         print self
         if sql_connect is None or force_reconnect:
             try:
-                sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db=db_name)
+                sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db=db_name, charset='utf-8')
                 return sql_connect
             except Exception, e:
                 # Create the database
                 if e[0] and create_db and db_name != "":
                     if sql_connect is None:
-                        sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD)
+                        sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, charset='utf-8')
                     utils.log("Creating database " + db_name)
 
                     cur = sql_connect.cursor()

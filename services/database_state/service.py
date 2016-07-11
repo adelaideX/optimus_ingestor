@@ -75,12 +75,12 @@ class DatabaseState(base_service.BaseService):
                     break
 
                 self.use_sql_database(database_name)
-                self.sql_query("DROP TABLE IF EXISTS "+tmp_table_name+"", True)
+                self.sql_query("DROP TABLE IF EXISTS " + tmp_table_name + "", True)
                 if self.create_table_and_validate(database_name, tmp_table_name, columns):
-                    self.sql_query("LOAD DATA LOCAL INFILE '"+path+"' INTO TABLE "+tmp_table_name+" FIELDS TERMINATED BY '\\t' LINES TERMINATED BY '\\n' IGNORE 1 LINES", True)
+                    self.sql_query("LOAD DATA LOCAL INFILE '"+path+"' INTO TABLE "+tmp_table_name+" CHARACTER SET utf8 FIELDS TERMINATED BY '\\t' LINES TERMINATED BY '\\n' IGNORE 1 LINES", True)
                     self.use_sql_database(database_name)
-                    self.sql_query("DROP TABLE IF EXISTS "+table_name+"", True)
-                    self.sql_query("RENAME TABLE "+tmp_table_name+" TO "+table_name, True)
+                    self.sql_query("DROP TABLE IF EXISTS " + table_name + "", True)
+                    self.sql_query("RENAME TABLE " + tmp_table_name + " TO " + table_name, True)
                     self.finish_ingest(ingest['id'])
         pass
 
@@ -95,10 +95,17 @@ class DatabaseState(base_service.BaseService):
             columns = []
         isvalid = False
 
+        # add indexes
+        index = ""
+        if table_name == 'tmp_auth_user':
+            index = ", KEY idx_email (`email`)"
+        if table_name == 'tmp_auth_userprofile':
+            index = ", KEY idx_uid (`user_id`)"
+
         self.use_sql_database(database_name)
 
         if self.sql_db:
-            #Create the ingestor table if necessary
+            # Create the ingestor table if necessary
             query = "CREATE TABLE IF NOT EXISTS "
             query += table_name
             query += " ( "
@@ -114,10 +121,13 @@ class DatabaseState(base_service.BaseService):
                     coltype = "datetime"
                 if column == "goals" or column == "mailing_address":
                     coltype = "text"
-                query += column.replace("\n", "")+" "+coltype+", "
+                if column == "bio":
+                    coltype = "mediumtext"
+                query += column.replace("\n", "") + " " + coltype + ", "
 
             query = query[:-2]
-            query += " );"
+            # set encoding and index
+            query += " " + index + ") DEFAULT CHARSET=utf8;"
             warnings.filterwarnings('ignore', category=MySQLdb.Warning)
             self.sql_query(query)
             warnings.filterwarnings('always', category=MySQLdb.Warning)

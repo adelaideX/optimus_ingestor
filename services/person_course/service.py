@@ -441,7 +441,7 @@ class PersonCourse(base_service.BaseService):
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
         query += " worst_assessment varchar(255)"
-        query += " );"
+        query += " ) DEFAULT CHARSET=utf8;"
         cursor = self.sql_pc_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
@@ -484,8 +484,8 @@ class PersonCourse(base_service.BaseService):
             query += " ("
             for column in columns:
                 query += column["col_name"] + " " + column["col_type"] + ", "
-            query += " inconsistent_flag TINYINT(1)"
-            query += " );"
+            query += " inconsistent_flag TINYINT(1),"
+            query += " KEY idx_course_uid(`course_id`, `user_id`)) DEFAULT CHARSET=utf8;"
             # print query
             cursor.execute(query)
             warnings.filterwarnings('always', category=MySQLdb.Warning)

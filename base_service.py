@@ -92,7 +92,8 @@ class BaseService(object):
         """
         Sets up the API DB for getting service information
         """
-        self.api_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='api', local_infile=1)
+        self.api_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD,
+                                      db='api', local_infile=1, charset='utf-8')
 
     def finished_ingestion(self, service_name):
         """
@@ -190,14 +191,18 @@ class BaseService(object):
         :param database_name: The name of the database
         """
         try:
-            self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db=database_name, local_infile=1)
+            self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD,
+                                          db=database_name, local_infile=1, charset='utf8')
             return True
         except MySQLdb.OperationalError:
-            self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='mysql', local_infile=1)
+            self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD,
+                                          db='mysql', local_infile=1, charset='utf8')
             cur = self.sql_db.cursor()
-            cur.execute("CREATE DATABASE "+database_name)
+            cur.execute("CREATE DATABASE " + database_name)
             try:
-                self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db=database_name, local_infile=1)
+                self.sql_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME,
+                                              passwd=config.SQL_PASSWORD, db=database_name, local_infile=1,
+                                              charset='utf8')
                 return True
             except MySQLdb.OperationalError:
                 log("Could not connect to MySQL Database: %s" % database_name)
@@ -257,7 +262,8 @@ class BaseService(object):
         :return: An array of ingests
         """
         ingests = []
-        api_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='api', local_infile=1)
+        api_db = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME, passwd=config.SQL_PASSWORD, db='api',
+                                 local_infile=1, charset='utf-8')
         cur = api_db.cursor()
         query = "SELECT * FROM ingestor WHERE service_name = '" + service_name + "' AND started = 1 AND completed = 1 ORDER BY created ASC;"
         cur.execute(query)
