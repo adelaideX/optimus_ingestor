@@ -102,9 +102,9 @@ class PersonCourse(base_service.BaseService):
         #     print "bad dbstate"
 
         if self.finished_ingestion("TimeFinder") and \
-                        last_run < last_timefinder and \
+                last_run < last_timefinder and \
                 self.finished_ingestion("IpToCountry") and \
-                        last_run < last_iptocountry and \
+                last_run < last_iptocountry and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
             # Create 'cf_table'
@@ -202,7 +202,7 @@ class PersonCourse(base_service.BaseService):
 
                 # Set LoE, YoB, gender based on the data in {auth_userprofile}
                 utils.log("{auth_userprofile}")
-                query = "SELECT user_id, year_of_birth, level_of_education, gender FROM auth_userprofile WHERE user_id in (" + ",".join(
+                query = "SELECT user_id, year_of_birth, level_of_education, gender FROM auth_userprofile WHERE user_id IN (" + ",".join(
                     ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
@@ -215,7 +215,7 @@ class PersonCourse(base_service.BaseService):
 
                 # Set certified based on the data in {certificates_generatedcertificate}
                 utils.log("{certificates_generatedcertificate}")
-                query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id in (" + ",".join(
+                query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id IN (" + ",".join(
                     ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
@@ -227,7 +227,7 @@ class PersonCourse(base_service.BaseService):
 
                 # Set start_time based on the data in {student_courseenrollment}
                 utils.log("{student_courseenrollment}")
-                query = "SELECT user_id, created, mode FROM student_courseenrollment WHERE user_id in (" + ",".join(
+                query = "SELECT user_id, created, mode FROM student_courseenrollment WHERE user_id IN (" + ",".join(
                     ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)
@@ -259,8 +259,7 @@ class PersonCourse(base_service.BaseService):
                 # Set ndays_act and viewed based on the data in {courseware_studentmodule}
                 try:
                     utils.log("{ndays_act: courseware_studentmodule}")
-                    # query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule GROUP BY student_id"
-                    query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule WHERE student_id is not null GROUP BY student_id"
+                    query = "SELECT student_id, COUNT(DISTINCT SUBSTRING(created, 1, 10)) FROM courseware_studentmodule GROUP BY student_id"
                     course_cursor.execute(query)
                     result = course_cursor.fetchall()
                     for record in result:
@@ -329,7 +328,7 @@ class PersonCourse(base_service.BaseService):
                             pc_dict[user_id].set_nforum_posts(item['postSum'])
                         else:
                             utils.log("Author id: %s does not exist in %s {auth_user}." % (
-                            user_id, self.mongo_collectionname))
+                                user_id, self.mongo_collectionname))
                     else:
                         utils.log(
                             "Author id: %s does not exist in %s {auth_user}." % (user_id, self.mongo_collectionname))
@@ -338,7 +337,6 @@ class PersonCourse(base_service.BaseService):
                 utils.log("{logs}")
                 self.mongo_dbname = "logs"
                 self.mongo_collectionname = "clickstream"
-                # self.mongo_collectionname = "clickstream_hypers_301x_sample"
                 self.connect_to_mongo(self.mongo_dbname, self.mongo_collectionname)
 
                 # Change call for new API code Tim Cavanagh 05/01/2016
