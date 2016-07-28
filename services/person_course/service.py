@@ -102,9 +102,9 @@ class PersonCourse(base_service.BaseService):
         #     print "bad dbstate"
 
         if self.finished_ingestion("TimeFinder") and \
-                last_run < last_timefinder and \
+                        last_run < last_timefinder and \
                 self.finished_ingestion("IpToCountry") and \
-                last_run < last_iptocountry and \
+                        last_run < last_iptocountry and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
             # Create 'cf_table'
@@ -317,9 +317,13 @@ class PersonCourse(base_service.BaseService):
                 self.mongo_collectionname = course['discussiontable']
                 self.connect_to_mongo(self.mongo_dbname, self.mongo_collectionname)
                 # Change call for new API code Tim Cavanagh 05/01/2016
-                pipeline = [{"$group": {"_id": "$author_id", "postSum": {"$sum": 1}}}]
-
-                user_posts = self.mongo_collection.aggregate(pipeline, allowDiskUse=True)
+                # pipeline = [{"$group": {"_id": "$author_id", "postSum": {"$sum": 1}}}]
+                #
+                # user_posts = self.mongo_collection.aggregate(pipeline, allowDiskUse=True)
+                user_posts = self.mongo_collection.aggregate([
+                    # {"$match": {"author_id": {"$in": user_id_list}}},
+                    {"$group": {"_id": "$author_id", "postSum": {"$sum": 1}}}
+                ])  # ['result']
 
                 for item in user_posts:
                     if "_id" in item and item["_id"] is not None:
@@ -339,19 +343,15 @@ class PersonCourse(base_service.BaseService):
                 self.mongo_collectionname = "clickstream"
                 self.connect_to_mongo(self.mongo_dbname, self.mongo_collectionname)
 
-                # Change call for new API code Tim Cavanagh 05/01/2016
-                # pipeline1 = [{"$match": {"context.course_id": pc_course_id, "context.user_id": {"$ne": None}}},
-                #              {"$sort": {"time": 1}},
-                #              {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"},
-                #                          "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}]
-                # user_events = self.mongo_collection.aggregate(pipeline1, allowDiskUse=True)
+                user_events = self.mongo_collection.aggregate([
+                    {"$match": {"context.course_id": pc_course_id}},
+                    {"$sort": {"time": 1}},
+                    {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"},
+                                "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
+                ], allowDiskUse=True, useCursor=False, batchSize=50)  # ['result'] batchSize=100,
 
-                user_events = list(self.mongo_collection.aggregate([
-                    {"$match": {"context.course_id": pc_course_id, "context.user_id": {"$ne": None}}},
-                    # {"$sort": {"time": 1}},
-                    {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"}, "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
-                ], allowDiskUse=True))
-                # ['result']
+                # if 'result' in user_events:
+                #     user_events = user_events['result']
 
                 for item in user_events:
                     user_id = item["_id"]

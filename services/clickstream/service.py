@@ -71,13 +71,13 @@ def ensure_mongo_indexes():
     """
     utils.log("Setting index for countries")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex({country:1})\""
-    #os.system(cmd)
+    os.system(cmd)
     utils.log("Setting index for event-course")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {event_type: 1,'context.course_id': 1} )\""
-    #os.system(cmd)
+    os.system(cmd)
     utils.log("Setting index for course")
     cmd = config.MONGO_PATH + "mongo  --quiet " + config.MONGO_HOST + "/logs --eval \"db.clickstream.ensureIndex( {'context.course_id': 1} )\""
-    #os.system(cmd)
+    os.system(cmd)
 
 
 def get_files(path):
