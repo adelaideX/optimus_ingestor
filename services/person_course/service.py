@@ -345,10 +345,10 @@ class PersonCourse(base_service.BaseService):
 
                 user_events = self.mongo_collection.aggregate([
                     {"$match": {"context.course_id": pc_course_id}},
-                    {"$sort": {"time": 1}},
+                    # {"$sort": {"time": 1}},
                     {"$group": {"_id": "$context.user_id", "countrySet": {"$addToSet": "$country"},
                                 "eventSum": {"$sum": 1}, "last_event": {"$last": "$time"}}}
-                ], allowDiskUse=True, useCursor=False, batchSize=50)  # ['result'] batchSize=100,
+                ], allowDiskUse=True, batchSize=100, useCursor=False)  # ['result'] batchSize=100, , useCursor=False
 
                 # if 'result' in user_events:
                 #     user_events = user_events['result']

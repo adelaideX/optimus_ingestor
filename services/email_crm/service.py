@@ -269,7 +269,7 @@ class EmailCRM(base_service.BaseService):
                 nice_name = courseinfo['display_name']
                 start = courseinfo['start'].split('T')
                 start_date = datetime.strptime(start[0].replace('"', ''), "%Y-%m-%d")
-                start_date.strftime("%d/%m/%Y")
+                start_date = start_date.strftime("%d/%m/%Y")
 
                 # au.last_login,
 
