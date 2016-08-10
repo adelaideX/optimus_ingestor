@@ -99,9 +99,8 @@ class EmailCRM(base_service.BaseService):
                     # update the ingest record
                     self.finish_ingest(ingest['id'])
 
-            self.save_run_ingest()
-            utils.log("EmailCRM completed")
-
+                    self.save_run_ingest()
+                    utils.log("EmailCRM completed")
         pass
 
     def country_code_import(self):
