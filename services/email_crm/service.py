@@ -131,7 +131,11 @@ class EmailCRM(base_service.BaseService):
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " " \
-            "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
+            "CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
+
+        if self.sql_ec_conn is None:
+            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
@@ -204,7 +208,7 @@ class EmailCRM(base_service.BaseService):
         query += "("
         for column in columns:
             query += "`" + column['col_name'] + "`" + " " + column['col_type'] + ', '
-        query += " KEY `idx_2_letter_code` (`ISO 3166-1 2 Letter Code`)) DEFAULT CHARSET=utf8;"
+        query += " KEY `idx_2_letter_code` (`ISO 3166-1 2 Letter Code`)) CHARSET=utf8;"
 
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
@@ -274,15 +278,19 @@ class EmailCRM(base_service.BaseService):
                 # au.last_login,
 
                 query = "SELECT up.user_id, au.is_staff, " \
-                        "au.is_active, e.email, " \
+                        "au.is_active, TRIM(TRAILING '.' FROM e.email ) AS email, " \
                         "pc.viewed, pc.explored, pc.certified, pc.mode, " \
-                        "substring_index(substring_index(e.full_name, ' ', 1), ' ', -( 1 )) AS first_name, " \
-                        "trim(substr(e.full_name, locate(' ', e.full_name))) AS last_name, " \
+                        "REPLACE(SUBSTRING_INDEX(e.full_name, ' ', 1), '�', '') AS first_name, " \
+                        "SUBSTR(SUBSTRING_INDEX(REPLACE(substr(e.full_name, locate(' ', e.full_name)), '�', ''), ',', -1), 1, 30) AS last_name, " \
                         "'{2}' AS course_id, " \
                         "'{3}' AS course_name, " \
                         "'{5}' AS course_start_date, " \
-                        "e.is_opted_in_for_email, " \
-                        "up.gender, up.year_of_birth, " \
+                        "CASE e.is_opted_in_for_email " \
+                        "WHEN 'True' THEN 'Yes' " \
+                        "ELSE 'No' END AS is_opted_in_for_email, " \
+                        "CASE up.gender WHEN 'm' THEN 'Male'  WHEN 'f' THEN 'Female' WHEN 'o' THEN 'Other' ELSE NULL END as gender, " \
+                        "CASE WHEN up.year_of_birth <= 1900 THEN NULL " \
+                        "ELSE up.year_of_birth END AS year_of_birth ," \
                         "up.level_of_education, " \
                         "( CASE up.level_of_education " \
                         "WHEN 'p' THEN 'Doctorate' " \
@@ -326,11 +334,12 @@ class EmailCRM(base_service.BaseService):
                         csv_writer = csv.writer(csv_file, dialect='excel', encoding='utf-8')
                         for row in result:
                             csv_writer.writerow(row)
+            except Exception, e:
+                print repr(e)
+                utils.log("EmailCRM FAILED: %s" % (repr(e)))
+                break
 
-            except self.sql_ec_conn.ProgrammingError:
-                pass
-
-        utils.log("The personcourse table: %s exported to csv file %s" % (e_tablename, backup_file))
+        utils.log("The EmailCRM data: %s exported to csv file %s" % (e_tablename, backup_file))
 
     def loadcourseinfo(self, json_file):
         """
