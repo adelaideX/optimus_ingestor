@@ -316,7 +316,7 @@ class EmailCRM(base_service.BaseService):
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
                         "LEFT JOIN {4}.iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
                         "AND (c.Type = 'Independent State' OR c.Type = 'Proto Dependency') "\
-                        "WHERE e.course_id = '{1}' ".format(dbname.lower(), mongoname, course_id, nice_name, self.ec_db, start_date)
+                        "WHERE e.course_id = '{1}' ".format(dbname, mongoname, course_id, nice_name, self.ec_db, start_date)
 
                 ec_cursor = self.sql_ec_conn.cursor()
                 ec_cursor.execute(query)
