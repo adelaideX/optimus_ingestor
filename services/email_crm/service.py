@@ -3,22 +3,18 @@
 Service for importing the email extract from edx
 """
 import json
+import os
 import time
 import urllib2
+import warnings
 from datetime import datetime
 
-import re
+import MySQLdb
 import unicodecsv as csv
 
-import config
-import os
-
-import MySQLdb
-import warnings
-
 import base_service
+import config
 import utils
-import ftfy
 
 
 class EmailCRM(base_service.BaseService):
