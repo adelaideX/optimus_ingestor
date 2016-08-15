@@ -7,6 +7,7 @@ import time
 import urllib2
 from datetime import datetime
 
+import re
 import unicodecsv as csv
 
 import config
@@ -17,6 +18,7 @@ import warnings
 
 import base_service
 import utils
+import ftfy
 
 
 class EmailCRM(base_service.BaseService):
@@ -276,11 +278,13 @@ class EmailCRM(base_service.BaseService):
 
                 # au.last_login,
 
-                query = "SELECT up.user_id, au.is_staff, " \
+                query = "SELECT up.user_id, " \
+                        "CASE au.is_staff " \
+                        "WHEN 1 THEN 'Yes' ELSE 'No' END AS is_staff, " \
                         "au.is_active, TRIM(TRAILING '.' FROM e.email ) AS email, " \
                         "pc.viewed, pc.explored, pc.certified, pc.mode, " \
                         "REPLACE(SUBSTRING_INDEX(e.full_name, ' ', 1), '�', '') AS first_name, " \
-                        "SUBSTR(SUBSTRING_INDEX(REPLACE(substr(e.full_name, locate(' ', e.full_name)), '�', ''), ',', -1), 1, 30) AS last_name, " \
+                        "SUBSTR(SUBSTRING_INDEX(REPLACE(REPLACE(SUBSTR(e.full_name, Locate(' ', e.full_name)),'�', ''), CONVERT(char(127) USING utf8),''), ',', -1), 2, 30) AS last_name, " \
                         "'{2}' AS course_id, " \
                         "'{3}' AS course_name, " \
                         "'{5}' AS course_start_date, " \
