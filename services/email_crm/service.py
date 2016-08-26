@@ -158,7 +158,7 @@ class EmailCRM(base_service.BaseService):
 
     def create_ec_table(self):
         """
-        Create the course profile table
+        Create the emailcrm table
         """
         columns = [
             {"col_name": "email", "col_type": "varchar(255)"},
@@ -173,6 +173,9 @@ class EmailCRM(base_service.BaseService):
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
         query += " KEY idx_email_course (`email`, `course_id`)) DEFAULT CHARSET=utf8;"
+
+        if self.sql_ec_conn is None:
+            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
 
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
@@ -206,6 +209,9 @@ class EmailCRM(base_service.BaseService):
         for column in columns:
             query += "`" + column['col_name'] + "`" + " " + column['col_type'] + ', '
         query += " KEY `idx_2_letter_code` (`ISO 3166-1 2 Letter Code`)) CHARSET=utf8;"
+
+        if self.sql_ec_conn is None:
+            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
 
         cursor = self.sql_ec_conn.cursor()
         cursor.execute(query)
