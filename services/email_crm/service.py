@@ -176,9 +176,13 @@ class EmailCRM(base_service.BaseService):
 
         if self.sql_ec_conn is None:
             self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+        try:
+            cursor = self.sql_ec_conn.cursor()
+            cursor.execute(query)
+        except (AttributeError, MySQLdb.OperationalError):
+            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+            cursor.execute(query)
 
-        cursor = self.sql_ec_conn.cursor()
-        cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
         pass
