@@ -38,14 +38,15 @@ class EmailCRM(base_service.BaseService):
         self.sleep_time = 60
 
         self.sql_db = None
-        self.sql_ec_conn = None
+        self.sql_ecrm_conn = None
 
         self.mongo_db = None
         self.mongo_dbname = ""
 
         # Variables
-        self.ec_db = 'Email_CRM'
-        self.ec_table = 'emailcrm'
+        self.ecrm_db = 'Email_CRM'
+        self.ecrm_table = 'emailcrm'
+        self.cn_table = 'countries_io'
         self.cc_table = 'iso_3166_2_countries'
         self.basepath = os.path.dirname(__file__)
         self.courses = {}
@@ -58,7 +59,7 @@ class EmailCRM(base_service.BaseService):
         """
         Set initial variables before the run loop starts
         """
-        self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+        self.sql_ecrm_conn = self.connect_to_sql(self.sql_ecrm_conn, self.ecrm_db, True)
         self.courses = self.get_all_courses()
 
         pass
@@ -72,10 +73,15 @@ class EmailCRM(base_service.BaseService):
 
         if self.finished_ingestion("PersonCourse") and last_run < last_personcourse:
 
-            # Create 'ec_table'
-            self.create_ec_table()
+            # Create 'ecrm_table'
+            self.create_ecrm_table()
             # manage country code table
             self.country_code_import()
+
+            # Create country name table
+            self.create_cn_table()
+            # manage country code table
+            self.import_cn_data()
 
             ingests = self.get_ingests()
             for ingest in ingests:
@@ -86,10 +92,10 @@ class EmailCRM(base_service.BaseService):
                     path = ingest['meta']
 
                     # purge the table
-                    self.truncate_ec_table()
+                    self.truncate_ecrm_table()
 
                     # Ingest the email file
-                    self.ingest_csv_file(path, self.ec_table)
+                    self.ingest_csv_file(path, self.ecrm_table)
 
                     # export the file
                     self.datadump2csv()
@@ -108,15 +114,39 @@ class EmailCRM(base_service.BaseService):
         """
         # check to see if table exists if it does then ignore - if not then create and populate with data from file
         query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{0}' ".format(self.cc_table)
-        cursor = self.sql_ec_conn.cursor()
+        cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
         if cursor.fetchone()[0] == 0:
-            cursor.close()
             # create the table
             self.create_cc_table()
             iso_countries_file = self.basepath + '/resources/iso_3166_2_countries.csv'
             if os.path.isfile(iso_countries_file):
                 self.ingest_csv_file(iso_countries_file, self.cc_table)
+        cursor.close()
+        pass
+
+    def import_cn_data(self):
+        """
+        Checks to see if the table exists, if not then create the table and import data.
+        :return:
+        """
+        # check to see if table exists if it does then ignore - if not then create and populate with data from file
+        query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{0}' ".format(self.cn_table)
+        cursor = self.sql_ecrm_conn.cursor()
+        cursor.execute(query)
+        if cursor.fetchone()[0] == 0:
+            # create the table
+            self.create_cn_table()
+            # load the countries json data from countries.io
+            countries_json = "http://country.io/names.json"
+            countries_file = urllib2.urlopen(countries_json)
+            if countries_file:
+                countryinfo = json.load(countries_file)
+                # return countryinfo
+            # iso_countries_file = self.basepath + '/resources/iso_3166_2_countries.csv'
+            # if os.path.isfile(iso_countries_file):
+            #     self.ingest_csv_file(iso_countries_file, self.cc_table)
+        cursor.close()
         pass
 
     def ingest_csv_file(self, ingest_file_path, tablename):
@@ -128,35 +158,32 @@ class EmailCRM(base_service.BaseService):
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " " \
-            "CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
+                                                                                              "CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
 
-        if self.sql_ec_conn is None:
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
-
-        cursor = self.sql_ec_conn.cursor()
+        cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
-        self.sql_ec_conn.commit()
+        self.sql_ecrm_conn.commit()
         print "Ingested " + ingest_file_path + "into " + tablename
         pass
 
-    def truncate_ec_table(self):
+    def truncate_ecrm_table(self):
         """
         Truncate the email table
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "TRUNCATE " + self.ec_table
-        cursor = self.sql_ec_conn.cursor()
+        query = "TRUNCATE " + self.ecrm_table
+        cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
-        self.sql_ec_conn.commit()
+        self.sql_ecrm_conn.commit()
         cursor.close()
 
-        print "Truncating " + self.ec_table
+        print "Truncating " + self.ecrm_table
         pass
 
-    def create_ec_table(self):
+    def create_ecrm_table(self):
         """
         Create the emailcrm table
         """
@@ -168,21 +195,19 @@ class EmailCRM(base_service.BaseService):
             {"col_name": "preference_set_datetime", "col_type": "date"},
         ]
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "CREATE TABLE IF NOT EXISTS " + self.ec_table
+        query = "CREATE TABLE IF NOT EXISTS " + self.ecrm_table
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
         query += " KEY idx_email_course (`email`, `course_id`)) DEFAULT CHARSET=utf8;"
-
-        if self.sql_ec_conn is None:
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
         try:
-            cursor = self.sql_ec_conn.cursor()
+            cursor = self.sql_ecrm_conn.cursor()
             cursor.execute(query)
-        except (AttributeError, MySQLdb.OperationalError):
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+            utils.log("Connection FAILED: %s" % (repr(e)))
+            self.sql_ecrm_conn = self.connect_to_sql(self.sql_ecrm_conn, self.ecrm_db, True)
+            cursor = self.sql_ecrm_conn.cursor()
             cursor.execute(query)
-
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
         pass
@@ -214,10 +239,28 @@ class EmailCRM(base_service.BaseService):
             query += "`" + column['col_name'] + "`" + " " + column['col_type'] + ', '
         query += " KEY `idx_2_letter_code` (`ISO 3166-1 2 Letter Code`)) CHARSET=utf8;"
 
-        if self.sql_ec_conn is None:
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
+        cursor = self.sql_ecrm_conn.cursor()
+        cursor.execute(query)
+        warnings.filterwarnings('always', category=MySQLdb.Warning)
+        cursor.close()
+        pass
 
-        cursor = self.sql_ec_conn.cursor()
+    def create_cn_table(self):
+        """
+        Create the country name table
+        """
+        columns = [
+            {"col_name": "country_code", "col_type": "varchar(255)"},
+            {"col_name": "country_name", "col_type": "varchar(255)"},
+        ]
+        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+        query = "CREATE TABLE IF NOT EXISTS " + self.cn_table
+        query += "("
+        for column in columns:
+            query += "`" + column['col_name'] + "`" + " " + column['col_type'] + ', '
+        query += " KEY `idx_2_letter_code` (`country_code`)) CHARSET=utf8;"
+
+        cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
@@ -249,11 +292,9 @@ class EmailCRM(base_service.BaseService):
         """
         Generates a CSV file for CRM
         """
-        e_tablename = self.ec_table
+        e_tablename = self.ecrm_table
 
         print "Exporting CSV: " + e_tablename
-        if self.sql_ec_conn is None:
-            self.sql_ec_conn = self.connect_to_sql(self.sql_ec_conn, self.ec_db, True)
 
         backup_path = config.EXPORT_PATH
         current_time = time.strftime('%m%d%Y-%H%M%S')
@@ -324,10 +365,11 @@ class EmailCRM(base_service.BaseService):
                         "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
                         "LEFT JOIN {4}.iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
-                        "AND (c.Type = 'Independent State' OR c.Type = 'Proto Dependency') "\
-                        "WHERE e.course_id = '{1}' ".format(dbname, mongoname, course_id, nice_name, self.ec_db, start_date)
+                        "AND (c.Type = 'Independent State' OR c.Type = 'Proto Dependency') " \
+                        "WHERE e.course_id = '{1}' ".format(dbname, mongoname, course_id, nice_name, self.ecrm_db,
+                                                            start_date)
 
-                ec_cursor = self.sql_ec_conn.cursor()
+                ec_cursor = self.sql_ecrm_conn.cursor()
                 ec_cursor.execute(query)
                 result = ec_cursor.fetchall()
                 ec_cursor.close()
