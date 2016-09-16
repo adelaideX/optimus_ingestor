@@ -165,7 +165,7 @@ class EmailCRM(base_service.BaseService):
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
         self.sql_ecrm_conn.commit()
-        print "Ingested " + ingest_file_path + "into " + tablename
+        print "Ingested " + ingest_file_path + " into " + tablename
         pass
 
     def truncate_ecrm_table(self):
@@ -208,6 +208,7 @@ class EmailCRM(base_service.BaseService):
             self.sql_ecrm_conn = self.connect_to_sql(self.sql_ecrm_conn, self.ecrm_db, True)
             cursor = self.sql_ecrm_conn.cursor()
             cursor.execute(query)
+            utils.log("Reset connection and executed query")
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
         pass
