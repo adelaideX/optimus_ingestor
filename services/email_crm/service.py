@@ -70,8 +70,11 @@ class EmailCRM(base_service.BaseService):
         """
         last_run = self.find_last_run_ingest("EmailCRM")
         last_personcourse = self.find_last_run_ingest("PersonCourse")
+        last_dbstate = self.find_last_run_ingest("DatabaseState")
 
-        if self.finished_ingestion("PersonCourse") and last_run < last_personcourse:
+        if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
+                self.finished_ingestion("DatabaseState") and \
+                        last_run < last_dbstate:
 
             # Create 'ecrm_table'
             self.create_ecrm_table()
