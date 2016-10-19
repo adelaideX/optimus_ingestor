@@ -68,13 +68,13 @@ class IPToCountry(base_service.BaseService):
             if self.mongo_db:
                 for collection in self.mongo_db.collection_names():
                     mongo_collection = self.mongo_db[collection]
-                    if mongo_collection:
-                        utils.log("CHECKING COUNTRY")
+                    if mongo_collection.name == 'clickstream':
+                        # utils.log("CHECKING COUNTRY")
                         # to speed up - add an geo_attempt flag so we don't check errors or bad ips again
                         toupdates = mongo_collection.find(
                             {self.ipfield: {'$exists': True}, 'country': {'$exists': False},
                              'geo_attempt': {'$exists': False}})
-                        utils.log("FOUND COUNTRY")
+                        utils.log("CHECKING COUNTRY")
                         i = 0
                         total = toupdates.count()
                         # for toupdate in toupdates:

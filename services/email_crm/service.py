@@ -2,6 +2,7 @@
 """
 Service for importing the email extract from edx
 """
+import glob
 import json
 import os
 import time
@@ -47,7 +48,10 @@ class EmailCRM(base_service.BaseService):
         self.ecrm_db = 'Email_CRM'
         self.ecrm_table = 'emailcrm'
         self.cn_table = 'countries_io'
-        self.cc_table = 'iso_3166_2_countries'
+        self.cn_url = 'http://country.io/names.json'
+
+        self.le_table = 'lastexport'
+
         self.basepath = os.path.dirname(__file__)
         self.courses = {}
 
@@ -72,19 +76,17 @@ class EmailCRM(base_service.BaseService):
         last_personcourse = self.find_last_run_ingest("PersonCourse")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
 
+
+
         if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
 
-            # Create 'ecrm_table'
-            self.create_ecrm_table()
-            # manage country code table
-            self.country_code_import()
+            # Create country name table and import data (if required)
+            self.create_load_cn_table()
 
-            # Create country name table
-            self.create_cn_table()
-            # manage country code table
-            self.import_cn_data()
+            # Create 'last export table'
+            self.create_le_table()
 
             ingests = self.get_ingests()
             for ingest in ingests:
@@ -100,6 +102,9 @@ class EmailCRM(base_service.BaseService):
                     # Ingest the email file
                     self.ingest_csv_file(path, self.ecrm_table)
 
+                    # Load last export file so we can use it for delta
+                    self.load_last_export()
+
                     # export the file
                     self.datadump2csv()
 
@@ -110,46 +115,34 @@ class EmailCRM(base_service.BaseService):
                     utils.log("EmailCRM completed")
         pass
 
-    def country_code_import(self):
+    def load_last_export(self):
         """
-        Checks to see if the table exists, if not then create the table and import data.
-        :return:
+        truncate the table then load the last export file.
         """
-        # check to see if table exists if it does then ignore - if not then create and populate with data from file
-        query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{0}' ".format(self.cc_table)
-        cursor = self.sql_ecrm_conn.cursor()
-        cursor.execute(query)
-        if cursor.fetchone()[0] == 0:
-            # create the table
-            self.create_cc_table()
-            iso_countries_file = self.basepath + '/resources/iso_3166_2_countries.csv'
-            if os.path.isfile(iso_countries_file):
-                self.ingest_csv_file(iso_countries_file, self.cc_table)
-        cursor.close()
-        pass
+        backup_path = config.EXPORT_PATH
 
-    def import_cn_data(self):
-        """
-        Checks to see if the table exists, if not then create the table and import data.
-        :return:
-        """
-        # check to see if table exists if it does then ignore - if not then create and populate with data from file
-        query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{0}' ".format(self.cn_table)
+        file_list = glob.glob(os.path.join(backup_path, self.ecrm_table + "*.csv"))
+        file_list.sort(reverse=True)
+        last_file = file_list[0]
+        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+        query = "SELECT 1 FROM %s WHERE extract_file = '%s' " % (self.le_table, last_file)
+        cursor = self.sql_ecrm_conn.cursor()
+
+        if not cursor.execute(query) and os.path.isfile(last_file):
+            self.ingest_csv_file(last_file, self.le_table)
+        cursor.close()
+
+        self.sql_ecrm_conn.commit()
+
+        # update the extract_date timestamp with now.
+        query = "UPDATE %s SET extract_date = '%s', extract_file = '%s' WHERE extract_date is NULL" % (
+            self.le_table, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())), last_file)
         cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
-        if cursor.fetchone()[0] == 0:
-            # create the table
-            self.create_cn_table()
-            # load the countries json data from countries.io
-            countries_json = "http://country.io/names.json"
-            countries_file = urllib2.urlopen(countries_json)
-            if countries_file:
-                countryinfo = json.load(countries_file)
-                # return countryinfo
-            # iso_countries_file = self.basepath + '/resources/iso_3166_2_countries.csv'
-            # if os.path.isfile(iso_countries_file):
-            #     self.ingest_csv_file(iso_countries_file, self.cc_table)
         cursor.close()
+        self.sql_ecrm_conn.commit()
+        warnings.filterwarnings('always', category=MySQLdb.Warning)
+
         pass
 
     def ingest_csv_file(self, ingest_file_path, tablename):
@@ -161,7 +154,7 @@ class EmailCRM(base_service.BaseService):
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " " \
-                                                                                              "CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\n'  IGNORE 1 LINES"
+                                                                                              "CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' ESCAPED BY '\' LINES TERMINATED BY '\\r\\n'  IGNORE 1 LINES"
 
         cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
@@ -216,40 +209,56 @@ class EmailCRM(base_service.BaseService):
         cursor.close()
         pass
 
-    def create_cc_table(self):
+    def create_le_table(self):
         """
-        Create the country code table
+        Create the lastexport table
         """
+
         columns = [
-            {"col_name": "Sort Order", "col_type": "int(11)"},
-            {"col_name": "Common Name", "col_type": "varchar(255)"},
-            {"col_name": "Formal Name", "col_type": "varchar(255)"},
-            {"col_name": "Type", "col_type": "varchar(255)"},
-            {"col_name": "Sub Type", "col_type": "varchar(255)"},
-            {"col_name": "Sovereignty", "col_type": "varchar(255)"},
-            {"col_name": "Capital", "col_type": "varchar(255)"},
-            {"col_name": "ISO 4217 Currency Code", "col_type": "varchar(255)"},
-            {"col_name": "ISO 4217 Currency Name", "col_type": "varchar(255)"},
-            {"col_name": "ITU-T Telephone Code", "col_type": "varchar(255)"},
-            {"col_name": "ISO 3166-1 2 Letter Code", "col_type": "varchar(255)"},
-            {"col_name": "ISO 3166-1 3 Letter Code", "col_type": "varchar(255)"},
-            {"col_name": "ISO 3166-1 Number", "col_type": "int(11)"},
-            {"col_name": "IANA Country Code TLD", "col_type": "varchar(255)"},
+            {"col_name": "user_id", "col_type": "int(11)"},
+            {"col_name": "is_staff", "col_type": "varchar(255)"},
+            {"col_name": "is_active", "col_type": "int(11)"},
+            {"col_name": "email", "col_type": "varchar(255)"},
+            {"col_name": "viewed", "col_type": "int(11)"},
+            {"col_name": "explored", "col_type": "int(11)"},
+            {"col_name": "certified", "col_type": "int(11)"},
+            {"col_name": "mode", "col_type": "varchar(255)"},
+            {"col_name": "first_name", "col_type": "varchar(255)"},
+            {"col_name": "last_name", "col_type": "varchar(255)"},
+            {"col_name": "course_id", "col_type": "varchar(255)"},
+            {"col_name": "course_name", "col_type": "varchar(255)"},
+            {"col_name": "course_start_date", "col_type": "varchar(255)"},
+            {"col_name": "enrolled_date", "col_type": "varchar(255)"},
+            {"col_name": "is_opted_in_for_email", "col_type": "varchar(255)"},
+            {"col_name": "gender", "col_type": "varchar(255)"},
+            {"col_name": "year_of_birth", "col_type": "varchar(255)"},
+            {"col_name": "level_of_education", "col_type": "varchar(255)"},
+            {"col_name": "levelofEd", "col_type": "varchar(255)"},
+            {"col_name": "country_name", "col_type": "varchar(255)"},
+            {"col_name": "extract_date", "col_type": "datetime"},
+            {"col_name": "extract_file", "col_type": "varchar(255)"},
+
         ]
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "CREATE TABLE IF NOT EXISTS " + self.cc_table
+        query = "CREATE TABLE IF NOT EXISTS " + self.le_table
         query += "("
         for column in columns:
-            query += "`" + column['col_name'] + "`" + " " + column['col_type'] + ', '
-        query += " KEY `idx_2_letter_code` (`ISO 3166-1 2 Letter Code`)) CHARSET=utf8;"
-
-        cursor = self.sql_ecrm_conn.cursor()
-        cursor.execute(query)
+            query += column['col_name'] + " " + column['col_type'] + ', '
+        query += " KEY `idx_le` (`user_id`,`viewed`,`explored`,`certified`,`is_opted_in_for_email`)) DEFAULT CHARSET=utf8;"
+        try:
+            cursor = self.sql_ecrm_conn.cursor()
+            cursor.execute(query)
+        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+            utils.log("Connection FAILED: %s" % (repr(e)))
+            self.sql_ecrm_conn = self.connect_to_sql(self.sql_ecrm_conn, self.ecrm_db, True)
+            cursor = self.sql_ecrm_conn.cursor()
+            cursor.execute(query)
+            utils.log("Reset connection and executed query")
         warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
         pass
 
-    def create_cn_table(self):
+    def create_load_cn_table(self):
         """
         Create the country name table
         """
@@ -266,8 +275,30 @@ class EmailCRM(base_service.BaseService):
 
         cursor = self.sql_ecrm_conn.cursor()
         cursor.execute(query)
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
         cursor.close()
+        query = "SELECT 1 FROM " + self.cn_table
+        cursor = self.sql_ecrm_conn.cursor()
+        if not cursor.execute(query):
+            # import data
+            try:
+                countrydatafile = urllib2.urlopen(self.cn_url)
+                if countrydatafile:
+                    countrydata = json.load(countrydatafile)
+
+                    sql = '''INSERT INTO ''' + self.cn_table + ''' VALUES(%s, %s)'''
+
+                    sql_values_list = list()
+                    for key, value in countrydata.iteritems():
+                        sql_values_list.append((key, value))
+
+                    cursor = self.sql_ecrm_conn.cursor()
+                    cursor.executemany(sql, sql_values_list)
+                    cursor.close()
+            except Exception, e:
+                print repr(e)
+                utils.log("Country import failed: %s" % (repr(e)))
+        cursor.close()
+        warnings.filterwarnings('always', category=MySQLdb.Warning)
         pass
 
     def get_ingests(self):
@@ -334,14 +365,13 @@ class EmailCRM(base_service.BaseService):
                         "WHEN 1 THEN 'Yes' ELSE 'No' END AS is_staff, " \
                         "au.is_active, TRIM(TRAILING '.' FROM e.email ) AS email, " \
                         "pc.viewed, pc.explored, pc.certified, pc.mode, " \
-                        "TRIM(TRAILING ',' FROM REPLACE(SUBSTRING_INDEX(e.full_name, ' ', 1), '�', '')) AS first_name, " \
-                        "SUBSTR(SUBSTRING_INDEX(REPLACE(REPLACE(SUBSTR(e.full_name, Locate(' ', e.full_name)),'�', ''), CONVERT(char(127) USING utf8),''), ',', -1), 2, 30) AS last_name, " \
+                        "TRIM(TRAILING '\\\\' FROM REPLACE(REPLACE(substring_index(e.full_name, ' ', 1),'�', ''), ',', '')) AS first_name, " \
+                        "TRIM(TRAILING '\\\\' FROM SUBSTR(TRIM(REPLACE(REPLACE(REPLACE(REPLACE(SUBSTR(e.full_name, LOCATE(' ', e.full_name)), '�', ''), ',', ''), '|', ''), CONVERT(CHAR(127) USING utf8), '')), 1, 30)) AS last_name, " \
                         "'{2}' AS course_id, " \
                         "'{3}' AS course_name, " \
                         "'{5}' AS course_start_date, " \
-                        "CASE e.is_opted_in_for_email " \
-                        "WHEN 'True' THEN 'Yes' " \
-                        "ELSE 'No' END AS is_opted_in_for_email, " \
+                        "DATE_FORMAT(pc.start_time,'%d/%m/%Y') as enrolled, " \
+                        "CASE WHEN DATE_FORMAT(NOW(), '%Y') - up.year_of_birth < 15 THEN 'No' ELSE CASE WHEN e.is_opted_in_for_email = 'True' THEN 'Yes' ELSE 'No' END END AS is_opted_in_for_email, " \
                         "CASE up.gender WHEN 'm' THEN 'Male'  WHEN 'f' THEN 'Female' WHEN 'o' THEN 'Other' ELSE NULL END as gender, " \
                         "CASE WHEN up.year_of_birth <= 1900 THEN NULL " \
                         "ELSE up.year_of_birth END AS year_of_birth ," \
@@ -360,16 +390,12 @@ class EmailCRM(base_service.BaseService):
                         "WHEN 'p_se' THEN 'Doctorate in science or engineering (no longer used)' " \
                         "WHEN 'p_oth' THEN 'Doctorate in another field (no longer used)' " \
                         "ELSE 'User did not specify level of education' END ) AS levelofEd, " \
-                        "up.country, " \
-                        "( CASE c.`Common Name` " \
-                        "WHEN 'British Sovereign Base Areas' THEN '' " \
-                        "ELSE c.`Common Name` END )AS country_name " \
+                        "c.country_name " \
                         "FROM {0}.auth_user au " \
                         "JOIN {4}.emailcrm e ON au.email = e.email " \
                         "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
-                        "LEFT JOIN {4}.iso_3166_2_countries c ON up.country = c.`ISO 3166-1 2 Letter Code` " \
-                        "AND (c.Type = 'Independent State' OR c.Type = 'Proto Dependency') " \
+                        "LEFT JOIN {4}.countries_io c ON up.country = c.country_code " \
                         "WHERE e.course_id = '{1}' ".format(dbname, mongoname, course_id, nice_name, self.ecrm_db,
                                                             start_date)
 
