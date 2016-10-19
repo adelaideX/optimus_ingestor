@@ -76,8 +76,6 @@ class EmailCRM(base_service.BaseService):
         last_personcourse = self.find_last_run_ingest("PersonCourse")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
 
-
-
         if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
@@ -396,8 +394,19 @@ class EmailCRM(base_service.BaseService):
                         "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
                         "LEFT JOIN {4}.countries_io c ON up.country = c.country_code " \
-                        "WHERE e.course_id = '{1}' ".format(dbname, mongoname, course_id, nice_name, self.ecrm_db,
-                                                            start_date)
+                        "LEFT JOIN email_crm.lastexport le " \
+                        "ON le.user_id = up.user_id " \
+                        "AND le.viewed = pc.viewed  " \
+                        "AND le.explored = pc.explored " \
+                        "AND le.certified = pc.certified " \
+                        "AND le.course_id = '{2}' " \
+                        "WHERE e.course_id = '{1}' " \
+                        "AND le.user_id is null " \
+                        "AND le.viewed is null " \
+                        "AND le.explored is null " \
+                        "AND le.certified is null " \
+                        "AND le.course_id is null ".format(dbname, mongoname, course_id, nice_name, self.ecrm_db,
+                                                           start_date)
 
                 ec_cursor = self.sql_ecrm_conn.cursor()
                 ec_cursor.execute(query)
