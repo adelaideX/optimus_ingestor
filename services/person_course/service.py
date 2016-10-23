@@ -76,31 +76,6 @@ class PersonCourse(base_service.BaseService):
         last_iptocountry = self.find_last_run_ingest("IpToCountry")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
 
-        # if self.finished_ingestion("TimeFinder"):
-        #     print "finished TimeFinder"
-        # else:
-        #     print "bad timefinder"
-        # if last_run < last_timefinder:
-        #     print "last_run < last_timefinder"
-        # else:
-        #     print "bad timefinder"
-        # if self.finished_ingestion("IpToCountry"):
-        #     print "IptoCountry finished"
-        # else:
-        #     print "bad ipcountry"
-        # if last_run < last_iptocountry:
-        #     print "last_run < last_iptocountry"
-        # else:
-        #     print "bad ipcountry"
-        # if self.finished_ingestion("DatabaseState"):
-        #     print "finished database state"
-        # else:
-        #     print "bad dbstate"
-        # if last_run < last_dbstate:
-        #     print "last_run < last_dbstate"
-        # else:
-        #     print "bad dbstate"
-
         if self.finished_ingestion("TimeFinder") and \
                         last_run < last_timefinder and \
                 self.finished_ingestion("IpToCountry") and \

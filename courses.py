@@ -16,6 +16,7 @@ EDX_DATABASES = {
     'Wine101x_2T2015': {'dbname': 'AdelaideX_Wine101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015', 'discussiontable': 'AdelaideX-Wine101x-2T2015-prod', 'icon': 'fa-glass', 'year': '2015'},
     'Wine101x_2T2015_2': {'dbname': 'AdelaideX_Wine101x_2T2015_2', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015.2', 'discussiontable': 'AdelaideX-Wine101x-2T2015-2-prod', 'icon': 'fa-glass', 'year': '2015'},
     'Wine101x_2T2016': {'dbname': 'AdelaideX_Wine101x_2T2016', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2016', 'discussiontable': 'AdelaideX-Wine101x-2T2016-prod', 'icon': 'fa-glass', 'year': '2016'},
+    'Wine101x_1T2016': {'dbname': 'AdelaideX_Wine101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Wine101x+1T2016', 'discussiontable': 'AdelaideX-Wine101x-1T2016-prod', 'icon': 'fa-glass', 'year': '2016'},
     'Entrep101X_1T2016': {'dbname': 'AdelaideX_Entrep101X_1T2016', 'mongoname': 'course-v1:AdelaideX+Entrep101X+1T2016', 'discussiontable': 'AdelaideX-Entrep101X-1T2016-prod', 'icon': 'fa-thumbs-o-up', 'year': '2016'},
     'Project101x_2T2016': {'dbname': 'AdelaideX_Project101x_2T2016', 'mongoname': 'course-v1:AdelaideX+Project101x+2T2016', 'discussiontable': 'AdelaideX-Project101x-2T2016-prod', 'icon': 'fa-calendar', 'year': '2016'},
     'AddictionX_3T2016': {'dbname': 'AdelaideX_AddictionX_3T2016', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2016', 'discussiontable': 'AdelaideX-AddictionX-3T2016-prod', 'icon': 'fa-heart', 'year': '2016'},
