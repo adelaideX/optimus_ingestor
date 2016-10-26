@@ -394,7 +394,7 @@ class EmailCRM(base_service.BaseService):
                         "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
                         "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
                         "LEFT JOIN {4}.countries_io c ON up.country = c.country_code " \
-                        "LEFT JOIN email_crm.lastexport le " \
+                        "LEFT JOIN {4}.lastexport le " \
                         "ON le.user_id = up.user_id " \
                         "AND le.viewed = pc.viewed  " \
                         "AND le.explored = pc.explored " \
