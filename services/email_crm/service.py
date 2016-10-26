@@ -100,11 +100,11 @@ class EmailCRM(base_service.BaseService):
                     # Ingest the email file
                     self.ingest_csv_file(path, self.ecrm_table)
 
-                    # Load last export file so we can use it for delta
-                    self.load_last_export()
-
                     # export the file
                     self.datadump2csv()
+
+                    # Load last export file so we can use it for delta
+                    self.load_last_export()
 
                     # update the ingest record
                     self.finish_ingest(ingest['id'])
@@ -424,6 +424,7 @@ class EmailCRM(base_service.BaseService):
                         csv_writer = csv.writer(csv_file, dialect='excel', encoding='utf-8')
                         for row in result:
                             csv_writer.writerow(row)
+
                 utils.log("EmailCRM select written to file: %s" % course_id)
             except Exception, e:
                 print repr(e)
