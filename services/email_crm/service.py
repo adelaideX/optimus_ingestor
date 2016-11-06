@@ -82,8 +82,6 @@ class EmailCRM(base_service.BaseService):
         last_personcourse = self.find_last_run_ingest("PersonCourse")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
 
-        self.zip_mail_last_export()
-
         if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
