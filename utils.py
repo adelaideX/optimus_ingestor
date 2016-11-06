@@ -3,6 +3,12 @@ import os
 import logging
 import datetime
 import config
+import smtplib
+from os.path import basename
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.utils import COMMASPACE, formatdate
 
 basepath = os.path.dirname(__file__)
 
@@ -40,3 +46,32 @@ def get_subdir(a_dir):
         p = os.path.join(a_dir, d)
         if os.path.isdir(p):
             return p
+
+
+def send_mail(send_from, send_to, cc_to, subject, text, files=None,
+              server="localhost"):
+    assert isinstance(send_to, list)
+    assert isinstance(cc_to, list)
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = COMMASPACE.join(send_to)
+    msg['CC'] = COMMASPACE.join(cc_to)
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(text))
+
+    for f in files or []:
+        with open(f, "rb") as fil:
+            part = MIMEApplication(
+                fil.read(),
+                Name=basename(f)
+            )
+            part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+            msg.attach(part)
+
+    smtp = smtplib.SMTP(server)
+    send_to = send_to + cc_to
+    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.quit()

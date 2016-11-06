@@ -8,6 +8,7 @@ import os
 import time
 import urllib2
 import warnings
+import zipfile
 from datetime import datetime
 
 import MySQLdb
@@ -26,6 +27,7 @@ class EmailCRM(base_service.BaseService):
     inst = None
 
     def __init__(self):
+        self.email_test = None
         EmailCRM.inst = self
         super(EmailCRM, self).__init__()
 
@@ -49,6 +51,10 @@ class EmailCRM(base_service.BaseService):
         self.ecrm_table = 'emailcrm'
         self.cn_table = 'countries_io'
         self.cn_url = 'http://country.io/names.json'
+
+        self.email_to = config.crm_email_to
+        self.email_cc = config.crm_email_cc
+        self.email_from = config.crm_email_from
 
         self.le_table = 'lastexport'
 
@@ -75,6 +81,8 @@ class EmailCRM(base_service.BaseService):
         last_run = self.find_last_run_ingest("EmailCRM")
         last_personcourse = self.find_last_run_ingest("PersonCourse")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
+
+        self.zip_mail_last_export()
 
         if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
                 self.finished_ingestion("DatabaseState") and \
@@ -106,6 +114,9 @@ class EmailCRM(base_service.BaseService):
                     # Load last export file so we can use it for delta
                     self.load_last_export()
 
+                    # Archive the file and email
+                    self.zip_mail_last_export()
+
                     # update the ingest record
                     self.finish_ingest(ingest['id'])
 
@@ -113,20 +124,76 @@ class EmailCRM(base_service.BaseService):
                     utils.log("EmailCRM completed")
         pass
 
-    def load_last_export(self):
+    @property
+    def get_last_csv_file(self):
         """
-        truncate the table then load the last export file.
+        Get the filename including the full path of the last saved crm_email export file.
         """
         backup_path = config.EXPORT_PATH
 
         file_list = glob.glob(os.path.join(backup_path, self.ecrm_table + "*.csv"))
         file_list.sort(reverse=True)
         last_file = file_list[0]
+        return last_file
+
+    def zip_mail_last_export(self):
+        """
+        Zip and mail last export file.
+        """
+        try:
+            import zlib
+            compression = zipfile.ZIP_DEFLATED
+        except:
+            compression = zipfile.ZIP_STORED
+
+        last_file = self.get_last_csv_file
+        if last_file:
+            zf = zipfile.ZipFile(last_file + ".zip", mode='w')
+            try:
+                print 'Adding {0} to zipfile.'.format(last_file)
+                zf.write(last_file, arcname=os.path.basename(last_file), compress_type=compression)
+            finally:
+                zf.close()
+        else:
+            return
+
+        # send an email with the attachment
+        html = "Hello, \n\n" \
+               "The following AdelaideX data files are attached for your use: \n" \
+               "    {0}.zip \n" \
+               "\n\n" \
+               "Cheers Tim\n\n" \
+               "Tim Cavanagh\n" \
+               "AdelaideX Data Czar\n" \
+               "Technology Services\n" \
+               "P:  8313 9073\n" \
+               "M:  0434 079 402\n" \
+               "E: tim.cavanagh@adelaide.edu.au\n" \
+               "The University of Adelaide,\n" \
+               "AUSTRALIA 5005\n".format(os.path.basename(last_file))
+
+        attachments = [last_file + ".zip"]
+        print 'Sending email with attachment'
+        if "dev" not in last_file:
+            utils.send_mail(send_from=self.email_from, send_to=self.email_to, cc_to=self.email_cc,
+                            subject='Student CRM extract from AdX: ' + str(datetime.now()), text=html,
+                            files=attachments)
+        else:
+            utils.send_mail(send_from=self.email_from, send_to=[self.email_from], cc_to=[],
+                            subject='Student CRM extract from AdX: ' + str(datetime.now()), text=html,
+                            files=attachments)
+
+    def load_last_export(self):
+        """
+        Truncate the table then load the last export file.
+        """
+        last_file = self.get_last_csv_file
+
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "SELECT 1 FROM %s WHERE extract_file = '%s' " % (self.le_table, last_file)
         cursor = self.sql_ecrm_conn.cursor()
 
-        if not cursor.execute(query) and os.path.isfile(last_file):
+        if not cursor.execute(query) and last_file:
             self.ingest_csv_file(last_file, self.le_table)
         cursor.close()
 
