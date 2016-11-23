@@ -21,6 +21,7 @@ EDX_DATABASES = {
     'Project101x_2T2016': {'dbname': 'AdelaideX_Project101x_2T2016', 'mongoname': 'course-v1:AdelaideX+Project101x+2T2016', 'discussiontable': 'AdelaideX-Project101x-2T2016-prod', 'icon': 'fa-calendar', 'year': '2016'},
     'AddictionX_3T2016': {'dbname': 'AdelaideX_AddictionX_3T2016', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2016', 'discussiontable': 'AdelaideX-AddictionX-3T2016-prod', 'icon': 'fa-heart', 'year': '2016'},
     'Lang101x_3T2016': {'dbname': 'AdelaideX_Lang101x_3T2016', 'mongoname': 'course-v1:AdelaideX+Lang101x+3T2016', 'discussiontable': 'AdelaideX-Lang101x-3T2016-prod', 'icon': 'fa-book', 'year': '2016'},
+    'Data101x_1T2017': {'dbname': 'AdelaideX_Data101x_1T2017', 'mongoname': 'course-v1:AdelaideX+Data101x+1T2017', 'discussiontable': 'AdelaideX-Data101x-1T2017-prod', 'icon': 'fa-cubes', 'year': '2017'},
 }
 
 for DB in EDX_DATABASES:
