@@ -395,7 +395,7 @@ class EmailCRM(base_service.BaseService):
         print "Exporting CSV: " + e_tablename
 
         backup_path = config.EXPORT_PATH
-        current_time = time.strftime('%m%d%Y-%H%M%S')
+        current_time = time.strftime('%Y%m%d-%H%M%S')
 
         # loop through courses -
         # write first file with headers then
