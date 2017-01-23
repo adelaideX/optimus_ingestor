@@ -5,6 +5,7 @@ EDX_DATABASES = {
     'AddictionX_3T2015': {'dbname': 'AdelaideX_AddictionX_3T2015', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2015', 'discussiontable': 'AdelaideX-AddictionX-3T2015-prod', 'icon': 'fa-heart', 'year': '2015'},
     'Code101x_2T2015': {'dbname': 'AdelaideX_Code101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Code101x+2T2015', 'discussiontable': 'AdelaideX-Code101x-2T2015-prod', 'icon': 'fa-code', 'year': '2015'},
     'Code101x_3T2015': {'dbname': 'AdelaideX_Code101x_3T2015', 'mongoname': 'course-v1:AdelaideX+Code101x+3T2015', 'discussiontable': 'AdelaideX-Code101x-3T2015-prod', 'icon': 'fa-code', 'year': '2015'},
+    'Code101x_2T2016': {'dbname': 'AdelaideX_Code101x_2T2016', 'mongoname': 'course-v1:AdelaideX+Code101x+2T2016', 'discussiontable': 'AdelaideX-Code101x-2T2016-prod', 'icon': 'fa-code', 'year': '2016'},
     'Cyber101x_2T2015': {'dbname': 'AdelaideX_Cyber101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Cyber101x+2T2015', 'discussiontable': 'AdelaideX-Cyber101x-2T2015-prod', 'icon': 'fa-credit-card', 'year': '2015'},
     'Cyber101x_1T2016': {'dbname': 'AdelaideX_Cyber101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Cyber101x+1T2016', 'discussiontable': 'AdelaideX-Cyber101x-1T2016-prod', 'icon': 'fa-credit-card', 'year': '2016'},
     'HumBio101x_1T2015': {'dbname': 'AdelaideX_HumBio101x_1T2015', 'mongoname': 'AdelaideX/HumBio101x/1T2015', 'discussiontable': 'AdelaideX-HumBio101x-1T2015-prod', 'icon': 'fa-medkit', 'year': '2015'},
