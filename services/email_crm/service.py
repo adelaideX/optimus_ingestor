@@ -89,6 +89,9 @@ class EmailCRM(base_service.BaseService):
             # Create country name table and import data (if required)
             self.create_load_cn_table()
 
+            # Create emailcrm table (if required)
+            self.create_ecrm_table()
+
             # Create 'last export table'
             self.create_le_table()
 
@@ -114,6 +117,9 @@ class EmailCRM(base_service.BaseService):
 
                     # Archive the file and email
                     self.zip_mail_last_export()
+
+                    # clean up the progressive data in the export table
+                    self.cleanup_last_export()
 
                     # update the ingest record
                     self.finish_ingest(ingest['id'])
@@ -247,6 +253,8 @@ class EmailCRM(base_service.BaseService):
         Create the emailcrm table
         """
         columns = [
+            {"col_name": "user_id", "col_type": "int(11)"},
+            {"col_name": "username", "col_type": "varchar(255)"},
             {"col_name": "email", "col_type": "varchar(255)"},
             {"col_name": "full_name", "col_type": "varchar(255)"},
             {"col_name": "course_id", "col_type": "varchar(255)"},
@@ -258,7 +266,7 @@ class EmailCRM(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_email_course (`email`, `course_id`)) DEFAULT CHARSET=utf8;"
+        query += " KEY idx_user_email (`user_id`, `course_id`)) DEFAULT CHARSET=utf8;"
         try:
             cursor = self.sql_ecrm_conn.cursor()
             cursor.execute(query)
@@ -423,7 +431,7 @@ class EmailCRM(base_service.BaseService):
 
                 # au.last_login,
 
-                query = "SELECT up.user_id, " \
+                query = "SELECT e.user_id, " \
                         "CASE au.is_staff " \
                         "WHEN 1 THEN 'Yes' ELSE 'No' END AS is_staff, " \
                         "au.is_active, TRIM(TRAILING '.' FROM e.email ) AS email, " \
@@ -454,13 +462,13 @@ class EmailCRM(base_service.BaseService):
                         "WHEN 'p_oth' THEN 'Doctorate in another field (no longer used)' " \
                         "ELSE 'User did not specify level of education' END ) AS levelofEd, " \
                         "c.country_name " \
-                        "FROM {0}.auth_user au " \
-                        "JOIN {4}.emailcrm e ON au.email = e.email " \
-                        "JOIN Person_Course.personcourse_{2} pc ON au.id = pc.user_id " \
-                        "JOIN {0}.auth_userprofile up ON au.id = up.user_id " \
+                        "FROM {4}.emailcrm e " \
+                        "JOIN {0}.auth_user au ON e.user_id = au.id " \
+                        "JOIN Person_Course.personcourse_{2} pc ON e.user_id = pc.user_id " \
+                        "JOIN {0}.auth_userprofile up ON e.user_id = up.user_id " \
                         "LEFT JOIN {4}.countries_io c ON up.country = c.country_code " \
                         "LEFT JOIN {4}.lastexport le " \
-                        "ON le.user_id = up.user_id " \
+                        "ON le.user_id = e.user_id " \
                         "AND le.viewed = pc.viewed  " \
                         "AND le.explored = pc.explored " \
                         "AND le.certified = pc.certified " \
@@ -512,6 +520,40 @@ class EmailCRM(base_service.BaseService):
             courseinfo = json.load(courseinfofile)
             return courseinfo
         return None
+
+    def cleanup_last_export(self):
+        """
+        Clean up the incremental values from the lastexport table
+        """
+        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+        query = "DELETE le FROM {1}.{0} le, " \
+                "( SELECT y.`user_id`, y.`course_id`, y.`viewed`, y.`explored`, y.`certified`, (y.`viewed` + y.`explored` + y.`certified`) as score " \
+                "FROM {1}.{0} y " \
+                "WHERE y.`viewed` + y.`explored` + y.`certified` < ( " \
+                "SELECT max(x.`viewed` + x.`explored` + x.`certified`) as score " \
+                "FROM {1}.{0} x " \
+                "WHERE x.`user_id` = y.`user_id`  " \
+                "AND x.`course_id` = y.`course_id` " \
+                " ) ) as bad_rows " \
+                "WHERE le.`user_id` = bad_rows.`user_id` " \
+                "AND le.`course_id` = bad_rows.`course_id` " \
+                "AND le.`viewed` = bad_rows.`viewed` " \
+                "AND le.`explored` = bad_rows.`explored` " \
+                "AND le.`certified` = bad_rows.`certified` ;".format(self.le_table, self.ecrm_db)
+        try:
+            cursor = self.sql_ecrm_conn.cursor()
+            cursor.execute(query)
+        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+            utils.log("Connection FAILED: %s" % (repr(e)))
+            self.sql_ecrm_conn = self.connect_to_sql(self.sql_ecrm_conn, self.ecrm_db, True)
+            cursor = self.sql_ecrm_conn.cursor()
+            cursor.execute(query)
+            utils.log("Reset connection and executed query")
+        warnings.filterwarnings('always', category=MySQLdb.Warning)
+        self.sql_ecrm_conn.commit()
+        cursor.close()
+        utils.log("The lastexport table has been cleaned.")
+        pass
 
 
 def get_files(path):
