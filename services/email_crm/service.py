@@ -82,7 +82,8 @@ class EmailCRM(base_service.BaseService):
         last_personcourse = self.find_last_run_ingest("PersonCourse")
         last_dbstate = self.find_last_run_ingest("DatabaseState")
 
-        if self.finished_ingestion("PersonCourse") and last_run < last_personcourse and \
+        if self.finished_ingestion("PersonCourse") and \
+                        last_run < last_personcourse and \
                 self.finished_ingestion("DatabaseState") and \
                         last_run < last_dbstate:
 
@@ -259,7 +260,7 @@ class EmailCRM(base_service.BaseService):
             {"col_name": "full_name", "col_type": "varchar(255)"},
             {"col_name": "course_id", "col_type": "varchar(255)"},
             {"col_name": "is_opted_in_for_email", "col_type": "varchar(255)"},
-            {"col_name": "preference_set_datetime", "col_type": "date"},
+            {"col_name": "preference_set_datetime", "col_type": "datetime"},
         ]
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
         query = "CREATE TABLE IF NOT EXISTS " + self.ecrm_table
