@@ -72,6 +72,6 @@ def send_mail(send_from, send_to, cc_to, subject, text, files=None,
             msg.attach(part)
 
     smtp = smtplib.SMTP(server)
-    send_to = send_to + cc_to
+    send_to += cc_to
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.quit()

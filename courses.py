@@ -23,6 +23,11 @@ EDX_DATABASES = {
     'AddictionX_3T2016': {'dbname': 'AdelaideX_AddictionX_3T2016', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2016', 'discussiontable': 'AdelaideX-AddictionX-3T2016-prod', 'icon': 'fa-heart', 'year': '2016'},
     'Lang101x_3T2016': {'dbname': 'AdelaideX_Lang101x_3T2016', 'mongoname': 'course-v1:AdelaideX+Lang101x+3T2016', 'discussiontable': 'AdelaideX-Lang101x-3T2016-prod', 'icon': 'fa-book', 'year': '2016'},
     'Data101x_1T2017': {'dbname': 'AdelaideX_Data101x_1T2017', 'mongoname': 'course-v1:AdelaideX+Data101x+1T2017', 'discussiontable': 'AdelaideX-Data101x-1T2017-prod', 'icon': 'fa-cubes', 'year': '2017'},
+    'ProgramX_2T2017': {'dbname': 'AdelaideX_ProgramX_2T2017', 'mongoname': 'course-v1:AdelaideX+ProgramX+2T2017', 'discussiontable': 'AdelaideX-ProgramX-2T2017-prod', 'icon': 'fa-bar-chart', 'year': '2017'},
+    'BigDataX_3T2017': {'dbname': 'AdelaideX_BigDataX_3T2017', 'mongoname': 'course-v1:AdelaideX+BigDataX+3T2017', 'discussiontable': 'AdelaideX-BigDataX-3T2017-prod', 'icon': 'fa-bar-chart', 'year': '2017'},
+    'CompX_3T2017': {'dbname': 'AdelaideX_CompX_3T2017', 'mongoname': 'course-v1:AdelaideX+CompX+3T2017', 'discussiontable': 'AdelaideX-CompX-3T2017-prod', 'icon': 'fa-bar-chart', 'year': '2017'},
+    'AnalysisX_3T2017': {'dbname': 'AdelaideX_AnalysisX_3T2017', 'mongoname': 'course-v1:AdelaideX+AnalysisX+3T2017', 'discussiontable': 'AdelaideX-AnalysisX-3T2017-prod', 'icon': 'fa-bar-chart', 'year': '2017'},
+    'DataCapX_3T2017': {'dbname': 'AdelaideX_DataCapX_3T2017', 'mongoname': 'course-v1:AdelaideX+DataCapX+3T2017', 'discussiontable': 'AdelaideX-DataCapX-3T2017-prod', 'icon': 'fa-bar-chart', 'year': '2017'},
 }
 
 for DB in EDX_DATABASES:
