@@ -50,6 +50,17 @@ def get_subdir(a_dir):
 
 def send_mail(send_from, send_to, cc_to, subject, text, files=None,
               server="localhost"):
+    """
+    Email Handler
+        :param server: 
+        :param files: 
+        :param text: 
+        :param subject: 
+        :param cc_to: 
+        :param send_to: 
+        :param send_from: 
+        
+    """
     assert isinstance(send_to, list)
     assert isinstance(cc_to, list)
 
@@ -71,7 +82,20 @@ def send_mail(send_from, send_to, cc_to, subject, text, files=None,
             part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
             msg.attach(part)
 
-    smtp = smtplib.SMTP(server)
-    send_to += cc_to
-    smtp.sendmail(send_from, send_to, msg.as_string())
-    smtp.quit()
+    try:
+        smtp = smtplib.SMTP(server)
+        send_to += cc_to
+        smtp.sendmail(send_from, send_to, msg.as_string())
+        smtp.quit()
+    except smtplib.SMTPException.message as errormsg:
+        raise SendError("Couldn't send message: %s" % (errormsg))
+    except smtplib.socket.error:
+        raise ConnectionError("Socket error while sending message")
+
+
+class SendError(Exception):
+    pass
+
+
+class ConnectionError(Exception):
+    pass

@@ -40,7 +40,6 @@ class EmailCRM(base_service.BaseService):
         # The amount of time to sleep in seconds
         self.sleep_time = 60
 
-        self.sql_db = None
         self.sql_ecrm_conn = None
 
         self.mongo_db = None
