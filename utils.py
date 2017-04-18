@@ -71,7 +71,7 @@ def send_mail(send_from, send_to, cc_to, subject, text, files=None,
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = subject
 
-    msg.attach(MIMEText(text))
+    msg.attach(MIMEText(text, 'html'))
 
     for f in files or []:
         with open(f, "rb") as fil:
