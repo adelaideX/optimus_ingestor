@@ -100,12 +100,14 @@ class ReportNotifier(base_service.BaseService):
                         if "dev" in report_file:
                             # send only to from address
                             to = [email_data['from_email']]
+                            cc = []
                         else:
                             to = email_data['to_email']
+                            cc = email_data['cc_email']
                         # send the email
                         utils.send_mail(send_from=email_data['from_email'],
                                         send_to=to,
-                                        cc_to=email_data['cc_email'],
+                                        cc_to=cc,
                                         subject=report['report_name'] + ' - ' + str(datetime.now()),
                                         text=html,
                                         files=report_files)

@@ -125,7 +125,7 @@ class EmailCRM(base_service.BaseService):
 
                     self.save_run_ingest()
                     utils.log("EmailCRM completed")
-        pass
+    pass
 
     @property
     def get_last_csv_file(self):
@@ -181,12 +181,14 @@ class EmailCRM(base_service.BaseService):
             if "dev" in last_file:
                 # send only to from address
                 to = [email_data['from_email']]
+                cc = []
             else:
                 to = email_data['to_email']
+                cc = email_data['cc_email']
             # send the email
             utils.send_mail(send_from=email_data['from_email'],
                             send_to=to,
-                            cc_to=email_data['cc_email'],
+                            cc_to=cc,
                             subject=report['report_name'] + ' - ' + str(datetime.now()),
                             text=html,
                             files=attachments)
