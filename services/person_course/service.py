@@ -245,45 +245,47 @@ class PersonCourse(base_service.BaseService):
                                 pc_dict[user_id].set_viewed(1)
                         else:
                             utils.log("Student id: %s does not exist in {auth_user}." % user_id)
+
+                    # Set attempted problems
+                    utils.log("{attempted_problems: courseware_studentmodule}")
+                    query = "SELECT student_id, COUNT(state) FROM courseware_studentmodule WHERE state LIKE '%correct_map%' GROUP BY student_id"
+                    course_cursor.execute(query)
+                    result = course_cursor.fetchall()
+                    for record in result:
+                        user_id = int(record[0])
+                        if user_id in pc_dict:
+                            pc_dict[user_id].set_attempted_problems(record[1])
+                        else:
+                            utils.log("Student id: %s does not exist in {auth_user}." % user_id)
+
+                    # Set nplay_video based on the data in {courseware_studentmodule}
+                    utils.log("{nplay_video: courseware_studentmodule}")
+                    query = "SELECT student_id, COUNT(*) FROM courseware_studentmodule WHERE module_type = 'video' GROUP BY student_id"
+                    course_cursor.execute(query)
+                    result = course_cursor.fetchall()
+                    for record in result:
+                        user_id = int(record[0])
+                        if user_id in pc_dict:
+                            pc_dict[user_id].set_nplay_video(record[1])
+
+                    # Set nchapters and explored based on the data in {courseware_studentmodule}
+                    utils.log("{nchapters: courseware_studentmodule}")
+                    query = "SELECT student_id, COUNT(DISTINCT module_id) FROM courseware_studentmodule WHERE module_type = 'chapter' GROUP BY student_id"
+                    course_cursor.execute(query)
+                    result = course_cursor.fetchall()
+                    for record in result:
+                        user_id = int(record[0])
+                        if user_id in pc_dict:
+                            pc_dict[user_id].set_nchapters(record[1])
+                            if record[1] >= half_chapters:
+                                pc_dict[user_id].set_explored(1)
+                            else:
+                                pc_dict[user_id].set_explored(0)
+
                 except self.sql_pc_conn.ProgrammingError:
                     utils.log("Couldnt find courseware_studentmodule for " + course_id)
-                    continue
-
-                # Set attempted problems
-                utils.log("{attempted_problems: courseware_studentmodule}")
-                query = "SELECT student_id, COUNT(state) FROM courseware_studentmodule WHERE state LIKE '%correct_map%' GROUP BY student_id"
-                course_cursor.execute(query)
-                result = course_cursor.fetchall()
-                for record in result:
-                    user_id = int(record[0])
-                    if user_id in pc_dict:
-                        pc_dict[user_id].set_attempted_problems(record[1])
-                    else:
-                        utils.log("Student id: %s does not exist in {auth_user}." % user_id)
-
-                # Set nplay_video based on the data in {courseware_studentmodule}
-                utils.log("{nplay_video: courseware_studentmodule}")
-                query = "SELECT student_id, COUNT(*) FROM courseware_studentmodule WHERE module_type = 'video' GROUP BY student_id"
-                course_cursor.execute(query)
-                result = course_cursor.fetchall()
-                for record in result:
-                    user_id = int(record[0])
-                    if user_id in pc_dict:
-                        pc_dict[user_id].set_nplay_video(record[1])
-
-                # Set nchapters and explored based on the data in {courseware_studentmodule}
-                utils.log("{nchapters: courseware_studentmodule}")
-                query = "SELECT student_id, COUNT(DISTINCT module_id) FROM courseware_studentmodule WHERE module_type = 'chapter' GROUP BY student_id"
-                course_cursor.execute(query)
-                result = course_cursor.fetchall()
-                for record in result:
-                    user_id = int(record[0])
-                    if user_id in pc_dict:
-                        pc_dict[user_id].set_nchapters(record[1])
-                        if record[1] >= half_chapters:
-                            pc_dict[user_id].set_explored(1)
-                        else:
-                            pc_dict[user_id].set_explored(0)
+                    # continue
+                    pass
 
                 # Mongo
                 # Discussion forum
