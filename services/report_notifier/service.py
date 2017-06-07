@@ -59,7 +59,7 @@ class ReportNotifier(base_service.BaseService):
         last_personcourse = self.find_last_run_ingest("PersonCourse")
 
         if self.finished_ingestion("PersonCourse") and \
-                        last_run < last_personcourse:
+                last_run < last_personcourse:
 
             reports = self.get_report_schedule()
             for report in reports:
@@ -137,7 +137,7 @@ class ReportNotifier(base_service.BaseService):
             writer.writeheader()
             # write utf-8 data
             for d in data:
-                writer.writerow(dict((k, v.encode('utf-8')) for k, v in d.iteritems()))
+                writer.writerow(dict((k, str(v).encode('utf-8')) for k, v in d.iteritems()))
 
         return backup_file
 
