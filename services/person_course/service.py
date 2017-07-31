@@ -188,9 +188,22 @@ class PersonCourse(base_service.BaseService):
                     pc_dict[user_id].set_LoE(record[2])
                     pc_dict[user_id].set_gender(record[3])
 
-                # Set certified based on the data in {certificates_generatedcertificate}
-                utils.log("{certificates_generatedcertificate}")
-                query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id IN (" + ",".join(
+                # # Set certified based on the data in {certificates_generatedcertificate}
+                # utils.log("{certificates_generatedcertificate}")
+                # query = "SELECT user_id, grade, status FROM certificates_generatedcertificate WHERE user_id IN (" + ",".join(
+                #     ["%s"] * len(user_id_list)) + ")"
+                # query = query % tuple(user_id_list)
+                # course_cursor.execute(query)
+                # result = course_cursor.fetchall()
+                # for record in result:
+                #     user_id = int(record[0])
+                #     pc_dict[user_id].set_grade(float(record[1]))
+                #     pc_dict[user_id].set_certified(record[2])
+
+                # Set certified based on the data in {grades_persistentcoursegrade}
+                # for now lets leverage new tables into old model
+                utils.log("{grades_persistentcoursegrade}")
+                query = "SELECT user_id, percent_grade,  letter_grade FROM grades_persistentcoursegrade WHERE user_id IN (" + ",".join(
                     ["%s"] * len(user_id_list)) + ")"
                 query = query % tuple(user_id_list)
                 course_cursor.execute(query)

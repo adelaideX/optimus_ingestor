@@ -167,8 +167,14 @@ class PCModel(object):
     def set_explored(self, explored):
         self.explored = explored
 
-    def set_certified(self, status):
-        if status == 'downloadable' or status == 'audit_passing':
+    # def set_certified(self, status):
+    #     if status == 'downloadable' or status == 'audit_passing':
+    #         self.certified = 1
+    #     else:
+    #         self.certified = 0
+
+    def set_certified(self, letter_grade):
+        if letter_grade == 'Pass':
             self.certified = 1
         else:
             self.certified = 0
