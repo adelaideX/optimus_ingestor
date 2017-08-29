@@ -52,15 +52,11 @@ class Clickstream(base_service.BaseService):
             if ingest['type'] == 'file':
                 self.start_ingest(ingest['id'])
                 utils.log("Importing from ingestor " + str(ingest['id']))
-                try:
-                    cmd = config.MONGO_PATH + "mongoimport --host " + config.MONGO_HOST + " --db " + self.mongo_dbname + " --collection " + self.mongo_collectionname + " --file " + \
+                cmd = "mongoimport --quiet --host " + config.MONGO_HOST + " --db " + self.mongo_dbname + " --collection " + self.mongo_collectionname + " < " + \
                       ingest['meta']
-                    # subprocess.call(cmd)
-                    os.system(cmd)
-                    self.finish_ingest(ingest['id'])
-                except Exception as e:
-                    utils.log("Importing failed " + str(ingest['id']) + ' ' + e.output)
-                    pass
+                os.system(cmd)
+
+                self.finish_ingest(ingest['id'])
         pass
 
 
