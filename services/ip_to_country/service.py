@@ -49,7 +49,8 @@ class IPToCountry(base_service.BaseService):
         Set initial variables before the run loop starts
         """
         # self.geo_reader = geoip2.database.Reader(basepath+'/lib/GeoIP2-Country.mmdb')
-        self.geo_reader = geoip2.database.Reader(basepath + '/lib/GeoLite2-Country.mmdb')
+        # self.geo_reader = geoip2.database.Reader(basepath + '/lib/GeoLite2-Country.mmdb')
+        self.geo_reader = geoip2.database.Reader(basepath + '/lib/GeoIP2-City.mmdb')
         pass
 
     def run(self):
@@ -71,9 +72,12 @@ class IPToCountry(base_service.BaseService):
                     if mongo_collection.name == 'clickstream':
                         # utils.log("CHECKING COUNTRY")
                         # to speed up - add an geo_attempt flag so we don't check errors or bad ips again
+                        # toupdates = mongo_collection.find(
+                        #     {self.ipfield: {'$exists': True}, 'country': {'$exists': False},
+                        #      'geo_attempt': {'$exists': False}})
+
                         toupdates = mongo_collection.find(
-                            {self.ipfield: {'$exists': True}, 'country': {'$exists': False},
-                             'geo_attempt': {'$exists': False}})
+                                 {self.ipfield: {'$exists': True}, 'geo_attempt': {'$exists': False}})
                         utils.log("CHECKING COUNTRY")
                         i = 0
                         total = toupdates.count()
@@ -82,26 +86,23 @@ class IPToCountry(base_service.BaseService):
                         for toupdate in toupdates:
                             if toupdate[self.ipfield] != '::1' and toupdate[self.ipfield] != '':
                                 try:
-                                    country = self.geo_reader.country(toupdate[self.ipfield])
-                                    isocountry = country.country.iso_code
-                                    isosubdiv = None
-                                    if isocountry == 'AU':
-                                        if self.city_reader is None:
-                                            self.city_reader = geoip2.database.Reader(
-                                                basepath + '/lib/GeoLite2-City.mmdb')
-                                        city = self.city_reader.city(toupdate[self.ipfield])
+                                    # load response from city db
+                                    city = self.geo_reader.city(toupdate[self.ipfield])
+                                    if city:
+                                        isocountry = city.country.iso_code
                                         isosubdiv = city.subdivisions.most_specific.iso_code
                                         cityname = city.city.name
-                                    if isosubdiv is not None:
+                                        lat = city.location.latitude
+                                        lon = city.location.longitude
                                         mongo_collection.update({"_id": toupdate['_id']}, {
                                             "$set": {"country": isocountry, "subdivision": isosubdiv,
-                                                     "city": cityname}})
+                                                     "city": cityname, "loc": {"x": lon, "y": lat}, "geo_attempt": 1}})
                                     else:
-                                        mongo_collection.update({"_id": toupdate['_id']},
-                                                                {"$set": {"country": isocountry}})
+                                        raise AddressNotFoundError
+
                                     print "*** ADDING ADDRESS " + str(i) + " / " + str(total)
                                 except AddressNotFoundError:
-                                    # utils.log("Could not find address for " + str(toupdate))
+                                    utils.log("Could not find address for " + str(toupdate))
                                     mongo_collection.update({"_id": toupdate['_id']},
                                                             {"$set": {"geo_attempt": 1}})
                                     pass
@@ -110,6 +111,7 @@ class IPToCountry(base_service.BaseService):
                                                         {"$set": {"country": "", "geo_attempt": 1}})
                             i += 1
                         utils.log("FINISHED COUNTRY")
+                        self.geo_reader.close()
                         self.save_run_ingest()
 
         pass
