@@ -102,7 +102,7 @@ class IPToCountry(base_service.BaseService):
 
                                     print "*** ADDING ADDRESS " + str(i) + " / " + str(total)
                                 except AddressNotFoundError:
-                                    utils.log("Could not find address for " + str(toupdate))
+                                    utils.log("Could not find address for " + str(toupdate['_id']))
                                     mongo_collection.update({"_id": toupdate['_id']},
                                                             {"$set": {"geo_attempt": 1}})
                                     pass
