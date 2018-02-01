@@ -264,7 +264,8 @@ class PersonCourse(base_service.BaseService):
 
                     # Set attempted problems
                     utils.log("{attempted_problems: courseware_studentmodule}")
-                    query = "SELECT student_id, COUNT(state) FROM courseware_studentmodule WHERE state LIKE '%correct_map%' GROUP BY student_id"
+                    # query = "SELECT student_id, COUNT(state) FROM courseware_studentmodule WHERE state LIKE '%correct_map%' GROUP BY student_id"
+                    query = "SELECT student_id, COUNT(state) FROM courseware_studentmodule WHERE grade <> 'NULL' GROUP BY student_id"
                     course_cursor.execute(query)
                     result = course_cursor.fetchall()
                     for record in result:
