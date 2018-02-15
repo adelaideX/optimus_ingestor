@@ -596,16 +596,21 @@ def get_files(path):
     print path
     required_files = []
 
-    main_path = os.path.realpath(os.path.join(path, 'database_state', 'latest'))
+    main_path = os.path.realpath(os.path.join(path, 'email-opt-in'))
 
     # patch main_path to use child directory as we can't use symlink
     if not config.SYMLINK_ENABLED:
         main_path = utils.get_subdir(main_path)
 
-    for filename in os.listdir(main_path):
-        if filename == config.DBSTATE_PREFIX.lower() + "email_opt_in-prod-analytics.csv":
-            required_files.append(os.path.join(main_path, filename))
-            break  # only one email file, once found exit the search
+    tmp = os.path.dirname(main_path)
+    # get the list of directory paths
+    emaildirs = [x[0] for x in os.walk(tmp)]
+    # latest dir path in list
+    latestdir = emaildirs[len(emaildirs)-1]
+
+    for filename in os.listdir(latestdir):
+        if '.csv' in filename:
+            required_files.append(os.path.join(latestdir, filename))
     return required_files
 
 
