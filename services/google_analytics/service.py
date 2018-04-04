@@ -88,11 +88,14 @@ class GoogleAnalytics(base_service.BaseService):
                     elif 'Conversions' in ingest['meta']:
                         # Ingest the conversions file
                         self.ingest_csv_file(path, self.conv_table)
+                    else:
+                        utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
 
                     # update the ingest record
                     self.finish_ingest(ingest['id'])
 
             # identify any new campaigns and add the key to the course_map table
+            print("GoogleAnalytics - updating map table")
             self.update_map_table()
             # save_run to ingest api
             self.save_run_ingest()
@@ -114,7 +117,7 @@ class GoogleAnalytics(base_service.BaseService):
         rows_count = cursor.execute(query)
         if rows_count > 0:
             cur = self.sql_ga_conn.cursor()
-            print insert
+            # print insert
             # update the map table
             cur.execute(insert)
             self.sql_ga_conn.commit()
@@ -264,7 +267,7 @@ def get_files(path):
     :param path: The path of the files
     :return: An array of file paths
     """
-    print path
+    # print path
     required_files = []
 
     main_path = os.path.realpath(os.path.join(path, 'ga'))
