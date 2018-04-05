@@ -158,7 +158,7 @@ def queue_data(servicehandler):
         for service_module in ServiceManager.servicemodules:
             required_files = service_module.get_files(path)
             for required_file in required_files:
-                print('ingesting.. ' + required_file)
+                # print('ingesting.. ' + required_file)
                 # Add file to the ingestion table
                 servicehandler.manager.add_to_ingestion(service_module.name(), 'file', os.path.realpath(required_file))
     return True
