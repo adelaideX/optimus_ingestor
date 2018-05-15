@@ -126,7 +126,7 @@ class GeoLocation(base_service.BaseService):
                         "eventSum": {"$sum": 1},
                         "last_event": {"$last": "$time"}
                     }}
-                ], allowDiskUse=True, batchSize=100, useCursor=False)  # ['result'] batchSize=100, , useCursor=False
+                ], allowDiskUse=True, batchSize=100, useCursor=True)  # ['result'] batchSize=100, , useCursor=False
 
                 gl_cursor = self.sql_gl_conn.cursor()
                 utils.log("save to {geolocation}")
