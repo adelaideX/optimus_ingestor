@@ -32,6 +32,8 @@ EDX_DATABASES = {
     'Project101x_1T2017': {'dbname': 'AdelaideX_Project101x_1T2017', 'mongoname': 'course-v1:AdelaideX+Project101x+1T2017', 'discussiontable': 'AdelaideX-Project101x-1T2017-prod', 'icon': 'fa-calendar', 'year': '2017'},
     'Project101x_2T2016': {'dbname': 'AdelaideX_Project101x_2T2016', 'mongoname': 'course-v1:AdelaideX+Project101x+2T2016', 'discussiontable': 'AdelaideX-Project101x-2T2016-prod', 'icon': 'fa-calendar', 'year': '2016'},
     'RiskX_2T2017': {'dbname': 'AdelaideX_RiskX_2T2017', 'mongoname': 'course-v1:AdelaideX+RiskX+2T2017', 'discussiontable': 'AdelaideX-RiskX-2T2017-prod', 'icon': 'fa-umbrella', 'year': '2017'},
+    'RiskX_2T2018': {'dbname': 'AdelaideX_RiskX_2T2018', 'mongoname': 'course-v1:AdelaideX+RiskX+2T2018', 'discussiontable': 'AdelaideX-RiskX-2T2018-prod', 'icon': 'fa-umbrella', 'year': '2018'},
+    'Sex101x_2T2018': {'dbname': 'AdelaideX_Sex101x_2T2018', 'mongoname': 'course-v1:AdelaideX+Sex101x+2T2018', 'discussiontable': 'AdelaideX-Sex101x-2T2018-prod', 'icon': 'fa-group', 'year': '2018'},
     'Wine101x_1T2016': {'dbname': 'AdelaideX_Wine101x_1T2016', 'mongoname': 'course-v1:AdelaideX+Wine101x+1T2016', 'discussiontable': 'AdelaideX-Wine101x-1T2016-prod', 'icon': 'fa-glass', 'year': '2016'},
     'Wine101x_2T2015': {'dbname': 'AdelaideX_Wine101x_2T2015', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015', 'discussiontable': 'AdelaideX-Wine101x-2T2015-prod', 'icon': 'fa-glass', 'year': '2015'},
     'Wine101x_2T2015_2': {'dbname': 'AdelaideX_Wine101x_2T2015_2', 'mongoname': 'course-v1:AdelaideX+Wine101x+2T2015.2', 'discussiontable': 'AdelaideX-Wine101x-2T2015-2-prod', 'icon': 'fa-glass', 'year': '2015'},
