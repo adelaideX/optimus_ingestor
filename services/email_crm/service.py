@@ -500,12 +500,14 @@ class EmailCRM(base_service.BaseService):
                         "AND le.viewed = pc.viewed  " \
                         "AND le.explored = pc.explored " \
                         "AND le.certified = pc.certified " \
+                        "AND le.mode = pc.mode " \
                         "AND le.course_id = '{2}' " \
                         "WHERE e.course_id = '{1}' " \
                         "AND le.user_id is null " \
                         "AND le.viewed is null " \
                         "AND le.explored is null " \
                         "AND le.certified is null " \
+                        "AND le.mode is null " \
                         "AND le.course_id is null ".format(dbname, mongoname, course_id, nice_name, self.ecrm_db,
                                                            start_date)
 
