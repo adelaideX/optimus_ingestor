@@ -72,7 +72,6 @@ class GoogleAnalytics(base_service.BaseService):
         for ingest in ingests:
             if ingest['type'] == 'file':
                 # print "ingesting " + ingest['meta']
-
                 self.start_ingest(ingest['id'])
                 path = ingest['meta']
 
@@ -84,19 +83,16 @@ class GoogleAnalytics(base_service.BaseService):
                     self.ingest_csv_file(path, self.conv_table)
                 else:
                     utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
-
                 # update the ingest record
                 self.finish_ingest(ingest['id'])
 
-        # identify any new campaigns and add the key to the course_map table
-        print("GoogleAnalytics - updating map table")
-        self.update_map_table()
-        # save_run to ingest api
-        self.save_run_ingest()
+            # identify any new campaigns and add the key to the course_map table
+            print("GoogleAnalytics - updating map table")
+            self.update_map_table()
+            # save_run to ingest api
+            # self.save_run_ingest()
         utils.log("GoogleAnalytics completed")
-
-
-pass
+        pass
 
 
 def update_map_table(self):
