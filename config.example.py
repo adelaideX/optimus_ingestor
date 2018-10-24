@@ -6,7 +6,10 @@ SQL_PASSWORD = ''
 MONGO_HOST = 'localhost'
 #Cache details - whether to call a URL once an ingestion script is finished
 RESET_CACHE = False
-RESET_CACHE_URL = 'http://example.com/visualization_reload/'
+RESET_CACHE_URL = 'http://example.com/api/refresh_cache'
+#Basic auth account to call api refresh
+RESET_CACHE_USER = 'example'
+RESET_CACHE_PASS = 'somepass'
 #Fab - configuration for deploying to a remote server
 FAB_HOSTS = []
 FAB_GITHUB_URL = 'https://github.com/UQ-UQx/optimus_ingestor.git'

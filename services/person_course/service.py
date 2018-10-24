@@ -382,6 +382,7 @@ class PersonCourse(base_service.BaseService):
 
             self.datadump2csv()
             self.save_run_ingest()
+            self.refresh_cache()
             utils.log("Person course completed")
 
     # Connects to a Mongo Database

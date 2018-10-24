@@ -1,6 +1,8 @@
 """
 The base service which all services extend
 """
+import urllib2
+
 from utils import *
 import time
 import MySQLdb
@@ -141,6 +143,32 @@ class BaseService(object):
         print query
         cur.execute(query)
         self.api_db.commit()
+
+    def refresh_cache(self):
+        """
+        If configured updates the cache data. Called after a service is completed - typically person_course
+        """
+        # check if refresh is configured
+        if config.RESET_CACHE:
+            # create a password manager
+            password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+
+            # Add the url, username and password.
+            reset_cache_url = config.RESET_CACHE_URL
+            username = config.RESET_CACHE_USER
+            password = config.RESET_CACHE_PASS
+            password_mgr.add_password('api', reset_cache_url, username, password)
+
+            handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+
+            # create "opener" (OpenerDirector instance)
+            opener = urllib2.build_opener(handler)
+
+            # use the opener to fetch the refresh URL
+            opener.open(reset_cache_url)
+
+            print 'cache refreshed'
+        pass
 
     def get_ingests(self):
         """
