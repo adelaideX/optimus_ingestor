@@ -59,206 +59,209 @@ class GoogleAnalytics(base_service.BaseService):
         """
         Runs every X seconds, the main run loop
         """
-        last_run = self.find_last_run_ingest_type("GoogleAnalytics")
-        last_dbstate = self.find_last_run_ingest("DatabaseState")
+        # Create course_map table
+        self.create_map_table()
 
-        if self.finished_ingestion("DatabaseState") and \
-                last_run < last_dbstate:
+        # Create conversions table
+        self.create_conv_table()
 
-            # Create course_map table
-            self.create_map_table()
+        # Create campaigns table
+        self.create_camp_table()
 
-            # Create conversions table
-            self.create_conv_table()
+        ingests = self.get_ingests()
+        for ingest in ingests:
+            if ingest['type'] == 'file':
+                # print "ingesting " + ingest['meta']
 
-            # Create campaigns table
-            self.create_camp_table()
+                self.start_ingest(ingest['id'])
+                path = ingest['meta']
 
-            ingests = self.get_ingests()
-            for ingest in ingests:
-                if ingest['type'] == 'file':
-                    # print "ingesting " + ingest['meta']
+                if 'Campaign' in ingest['meta']:
+                    # Ingest the campaigns file
+                    self.ingest_csv_file(path, self.camp_table)
+                elif 'Conversions' in ingest['meta']:
+                    # Ingest the conversions file
+                    self.ingest_csv_file(path, self.conv_table)
+                else:
+                    utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
 
-                    self.start_ingest(ingest['id'])
-                    path = ingest['meta']
+                # update the ingest record
+                self.finish_ingest(ingest['id'])
 
-                    if 'Campaign' in ingest['meta']:
-                        # Ingest the campaigns file
-                        self.ingest_csv_file(path, self.camp_table)
-                    elif 'Conversions' in ingest['meta']:
-                        # Ingest the conversions file
-                        self.ingest_csv_file(path, self.conv_table)
-                    else:
-                        utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
+        # identify any new campaigns and add the key to the course_map table
+        print("GoogleAnalytics - updating map table")
+        self.update_map_table()
+        # save_run to ingest api
+        self.save_run_ingest()
+        utils.log("GoogleAnalytics completed")
 
-                    # update the ingest record
-                    self.finish_ingest(ingest['id'])
 
-            # identify any new campaigns and add the key to the course_map table
-            print("GoogleAnalytics - updating map table")
-            self.update_map_table()
-            # save_run to ingest api
-            self.save_run_ingest()
-            utils.log("GoogleAnalytics completed")
+pass
+
+
+def update_map_table(self):
+    """
+    Updates the course map table with any ad_content data that is in each table but not in the course_map table
+    :return:
+    """
+    # get the values to be inserted in map table
+    warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+    cursor = self.sql_ga_conn.cursor()
+    query = "SELECT DISTINCT sub.ad_content FROM (SELECT ad_content FROM " + self.camp_table + " UNION SELECT ad_content FROM " + self.conv_table + " ) sub WHERE  sub.ad_content NOT IN (SELECT cm.ad_content FROM " + self.map_table + " cm)"
+    insert = "INSERT INTO " + self.map_table + " (ad_content) " + query
+    # check if there are any records to update
+    rows_count = cursor.execute(query)
+    if rows_count > 0:
+        cur = self.sql_ga_conn.cursor()
+        # print insert
+        # update the map table
+        cur.execute(insert)
+        self.sql_ga_conn.commit()
+        cur.close()
+    cursor.close()
+    warnings.filterwarnings('always', category=MySQLdb.Warning)
+
+
+pass
+
+
+def ingest_csv_file(self, ingest_file_path, tablename):
+    """
+    Ingests a csv file of the type defined, may not work for all separated text files
+    :param ingest_file_path:
+    :param tablename:
+    :return:
+    """
+    warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+    query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 7 LINES"
+
+    cursor = self.sql_ga_conn.cursor()
+    cursor.execute(query)
+    warnings.filterwarnings('always', category=MySQLdb.Warning)
+    cursor.close()
+    self.sql_ga_conn.commit()
+    print "Ingested " + ingest_file_path + " into " + tablename
 
     pass
 
-    def update_map_table(self):
-        """
-        Updates the course map table with any ad_content data that is in each table but not in the course_map table
-        :return:
-        """
-        # get the values to be inserted in map table
-        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        cursor = self.sql_ga_conn.cursor()
-        query = "SELECT DISTINCT sub.ad_content FROM (SELECT ad_content FROM " + self.camp_table + " UNION SELECT ad_content FROM " + self.conv_table + " ) sub WHERE  sub.ad_content NOT IN (SELECT cm.ad_content FROM " + self.map_table + " cm)"
-        insert = "INSERT INTO " + self.map_table + " (ad_content) " + query
-        # check if there are any records to update
-        rows_count = cursor.execute(query)
-        if rows_count > 0:
-            cur = self.sql_ga_conn.cursor()
-            # print insert
-            # update the map table
-            cur.execute(insert)
-            self.sql_ga_conn.commit()
-            cur.close()
-        cursor.close()
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
-    pass
 
-    def ingest_csv_file(self, ingest_file_path, tablename):
-        """
-        Ingests a csv file of the type defined, may not work for all separated text files
-        :param ingest_file_path:
-        :param tablename:
-        :return:
-        """
-        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 7 LINES"
-
+def create_map_table(self):
+    """
+    Create the course_map table
+    """
+    columns = [
+        {"col_name": "ad_content", "col_type": "varchar(255)"},
+        {"col_name": "course_id", "col_type": "varchar(255)"},
+    ]
+    warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+    query = "CREATE TABLE IF NOT EXISTS " + self.map_table
+    query += "("
+    for column in columns:
+        query += column['col_name'] + " " + column['col_type'] + ', '
+    query += " KEY idx_ad_course (ad_content, course_id)) DEFAULT CHARSET=utf8;"
+    try:
         cursor = self.sql_ga_conn.cursor()
         cursor.execute(query)
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
-        cursor.close()
-        self.sql_ga_conn.commit()
-        print "Ingested " + ingest_file_path + " into " + tablename
+    except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+        utils.log("Connection FAILED: %s" % (repr(e)))
+        self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
+        cursor = self.sql_ga_conn.cursor()
+        cursor.execute(query)
+        utils.log("Reset connection and executed query")
+    warnings.filterwarnings('always', category=MySQLdb.Warning)
+    cursor.close()
 
-        pass
+    pass
 
-    def create_map_table(self):
-        """
-        Create the course_map table
-        """
-        columns = [
-            {"col_name": "ad_content", "col_type": "varchar(255)"},
-            {"col_name": "course_id", "col_type": "varchar(255)"},
-        ]
-        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "CREATE TABLE IF NOT EXISTS " + self.map_table
-        query += "("
-        for column in columns:
-            query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad_course (ad_content, course_id)) DEFAULT CHARSET=utf8;"
-        try:
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
-            utils.log("Connection FAILED: %s" % (repr(e)))
-            self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-            utils.log("Reset connection and executed query")
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
-        cursor.close()
 
-        pass
+def create_conv_table(self):
+    """
+    Create the conversions table
+    """
+    columns = [
+        {"col_name": "date", "col_type": "date"},
+        {"col_name": "campaign", "col_type": "varchar(255)"},
+        {"col_name": "source", "col_type": "varchar(255)"},
+        {"col_name": "ad_content", "col_type": "varchar(255)"},
+        {"col_name": "enrollment_serverside", "col_type": "varchar(255)"},
+        {"col_name": "transactions", "col_type": "varchar(255)"},
+        {"col_name": "revenue", "col_type": "varchar(255)"},
+    ]
+    warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+    query = "CREATE TABLE IF NOT EXISTS " + self.conv_table
+    query += "("
+    for column in columns:
+        query += column['col_name'] + " " + column['col_type'] + ', '
+    query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
+    try:
+        cursor = self.sql_ga_conn.cursor()
+        cursor.execute(query)
+    except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+        utils.log("Connection FAILED: %s" % (repr(e)))
+        self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
+        cursor = self.sql_ga_conn.cursor()
+        cursor.execute(query)
+        utils.log("Reset connection and executed query")
+    warnings.filterwarnings('always', category=MySQLdb.Warning)
+    cursor.close()
 
-    def create_conv_table(self):
-        """
-        Create the conversions table
-        """
-        columns = [
-            {"col_name": "date", "col_type": "date"},
-            {"col_name": "campaign", "col_type": "varchar(255)"},
-            {"col_name": "source", "col_type": "varchar(255)"},
-            {"col_name": "ad_content", "col_type": "varchar(255)"},
-            {"col_name": "enrollment_serverside", "col_type": "varchar(255)"},
-            {"col_name": "transactions", "col_type": "varchar(255)"},
-            {"col_name": "revenue", "col_type": "varchar(255)"},
-        ]
-        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "CREATE TABLE IF NOT EXISTS " + self.conv_table
-        query += "("
-        for column in columns:
-            query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
-        try:
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
-            utils.log("Connection FAILED: %s" % (repr(e)))
-            self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-            utils.log("Reset connection and executed query")
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
-        cursor.close()
+    pass
 
-        pass
 
-    def create_camp_table(self):
-        """
-        Create the campaign table
-        """
+def create_camp_table(self):
+    """
+    Create the campaign table
+    """
 
-        columns = [
-            {"col_name": "date", "col_type": "date"},
-            {"col_name": "campaign", "col_type": "varchar(255)"},
-            {"col_name": "source", "col_type": "varchar(255)"},
-            {"col_name": "ad_content", "col_type": "varchar(255)"},
-            {"col_name": "sessions", "col_type": "int(11)"},
-            {"col_name": "new_users", "col_type": "int(11)"},
-            {"col_name": "new_sessions", "col_type": "varchar(255)"},
-            {"col_name": "bounce_rate", "col_type": "varchar(255)"},
-            {"col_name": "pages_per_session", "col_type": "double"},
-            {"col_name": "avg_session_duration", "col_type": "varchar(255)"},
-        ]
-        warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "CREATE TABLE IF NOT EXISTS " + self.camp_table
-        query += "("
-        for column in columns:
-            query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
-        try:
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-        except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
-            utils.log("Connection FAILED: %s" % (repr(e)))
-            self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
-            cursor = self.sql_ga_conn.cursor()
-            cursor.execute(query)
-            utils.log("Reset connection and executed query")
-        warnings.filterwarnings('always', category=MySQLdb.Warning)
-        cursor.close()
+    columns = [
+        {"col_name": "date", "col_type": "date"},
+        {"col_name": "campaign", "col_type": "varchar(255)"},
+        {"col_name": "source", "col_type": "varchar(255)"},
+        {"col_name": "ad_content", "col_type": "varchar(255)"},
+        {"col_name": "sessions", "col_type": "int(11)"},
+        {"col_name": "new_users", "col_type": "int(11)"},
+        {"col_name": "new_sessions", "col_type": "varchar(255)"},
+        {"col_name": "bounce_rate", "col_type": "varchar(255)"},
+        {"col_name": "pages_per_session", "col_type": "double"},
+        {"col_name": "avg_session_duration", "col_type": "varchar(255)"},
+    ]
+    warnings.filterwarnings('ignore', category=MySQLdb.Warning)
+    query = "CREATE TABLE IF NOT EXISTS " + self.camp_table
+    query += "("
+    for column in columns:
+        query += column['col_name'] + " " + column['col_type'] + ', '
+    query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
+    try:
+        cursor = self.sql_ga_conn.cursor()
+        cursor.execute(query)
+    except (MySQLdb.OperationalError, MySQLdb.ProgrammingError), e:
+        utils.log("Connection FAILED: %s" % (repr(e)))
+        self.sql_ga_conn = self.connect_to_sql(self.sql_ga_conn, self.ga_db, True)
+        cursor = self.sql_ga_conn.cursor()
+        cursor.execute(query)
+        utils.log("Reset connection and executed query")
+    warnings.filterwarnings('always', category=MySQLdb.Warning)
+    cursor.close()
 
-        pass
+    pass
 
-    def find_last_run_ingest_type(self, service_name):
-        """
-        Finds the date of the last time the service ran
-        :param service_name: The name of the service to find
-        :return: The date of the last run
-        """
-        self.setup_ingest_api()
-        cur = self.api_db.cursor()
-        query = "SELECT * FROM ingestor WHERE service_name = '" + service_name + "' AND type = 'save_run' " \
-                                                                                 "AND started = 1 AND completed = 1 ORDER BY created DESC LIMIT 1;"
-        cur.execute(query)
-        date = datetime.datetime.fromtimestamp(0)
-        for row in cur.fetchall():
-            date = row[6]
-        cur.close()
-        return date
+
+def find_last_run_ingest_type(self, service_name):
+    """
+    Finds the date of the last time the service ran
+    :param service_name: The name of the service to find
+    :return: The date of the last run
+    """
+    self.setup_ingest_api()
+    cur = self.api_db.cursor()
+    query = "SELECT * FROM ingestor WHERE service_name = '" + service_name + "' AND type = 'save_run' " \
+                                                                             "AND started = 1 AND completed = 1 ORDER BY created DESC LIMIT 1;"
+    cur.execute(query)
+    date = datetime.datetime.fromtimestamp(0)
+    for row in cur.fetchall():
+        date = row[6]
+    cur.close()
+    return date
 
 
 def get_files(path):
