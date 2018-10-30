@@ -37,7 +37,7 @@ class GoogleAnalytics(base_service.BaseService):
 
         # Variables
         self.ga_db = 'Google_Analytics'
-        self.map_table = 'course_map'
+        self.map_table = 'coursemap'
         self.conv_table = 'conversions'
         self.camp_table = 'campaigns'
 
@@ -138,7 +138,7 @@ class GoogleAnalytics(base_service.BaseService):
 
     def create_map_table(self):
         """
-        Create the course_map table
+        Create the coursemap table
         """
         columns = [
             {"col_name": "ad_content", "col_type": "varchar(255)"},
@@ -149,7 +149,7 @@ class GoogleAnalytics(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad_course (ad_content, course_id)) DEFAULT CHARSET=utf8;"
+        query += " PRIMARY KEY (`ad_content`), KEY idx_ad_course (ad_content, course_id)) DEFAULT CHARSET=utf8;"
         try:
             cursor = self.sql_ga_conn.cursor()
             cursor.execute(query)
@@ -170,6 +170,7 @@ class GoogleAnalytics(base_service.BaseService):
         Create the conversions table
         """
         columns = [
+            {"col_name": "id", "col_type": "int(11) unsigned NOT NULL AUTO_INCREMENT"},
             {"col_name": "date", "col_type": "date"},
             {"col_name": "campaign", "col_type": "varchar(255)"},
             {"col_name": "source", "col_type": "varchar(255)"},
@@ -183,7 +184,7 @@ class GoogleAnalytics(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
+        query += " PRIMARY KEY (`id`), KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
         try:
             cursor = self.sql_ga_conn.cursor()
             cursor.execute(query)
@@ -205,6 +206,7 @@ class GoogleAnalytics(base_service.BaseService):
         """
 
         columns = [
+            {"col_name": "id", "col_type": "int(11) unsigned NOT NULL AUTO_INCREMENT"},
             {"col_name": "date", "col_type": "date"},
             {"col_name": "campaign", "col_type": "varchar(255)"},
             {"col_name": "source", "col_type": "varchar(255)"},
@@ -221,7 +223,7 @@ class GoogleAnalytics(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
+        query += " PRIMARY KEY (`id`), KEY idx_ad (ad_content)) DEFAULT CHARSET=utf8;"
         try:
             cursor = self.sql_ga_conn.cursor()
             cursor.execute(query)
