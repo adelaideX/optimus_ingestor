@@ -59,44 +59,46 @@ class GoogleAnalytics(base_service.BaseService):
         """
         Runs every X seconds, the main run loop
         """
-        # Create course_map table
-        self.create_map_table()
-
-        # Create conversions table
-        self.create_conv_table()
-
-        # Create campaigns table
-        self.create_camp_table()
-
         ingests = self.get_ingests()
-        for ingest in ingests:
-            if ingest['type'] == 'file':
-                # print "ingesting " + ingest['meta']
-                self.start_ingest(ingest['id'])
-                path = ingest['meta']
+        # check every 60 secs but only execute code if there are files to ingest.
+        if ingests:
+            # Create coursemap table
+            self.create_map_table()
 
-                if 'Campaign' in ingest['meta']:
-                    # Ingest the campaigns file
-                    self.ingest_csv_file(path, self.camp_table)
-                elif 'Conversions' in ingest['meta']:
-                    # Ingest the conversions file
-                    self.ingest_csv_file(path, self.conv_table)
-                else:
-                    utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
-                # update the ingest record
-                self.finish_ingest(ingest['id'])
+            # Create conversions table
+            self.create_conv_table()
 
-            # identify any new campaigns and add the key to the course_map table
-            print("GoogleAnalytics - updating map table")
-            self.update_map_table()
-            # save_run to ingest api
-            # self.save_run_ingest()
-        utils.log("GoogleAnalytics completed")
+            # Create campaigns table
+            self.create_camp_table()
+
+            for ingest in ingests:
+                if ingest['type'] == 'file':
+                    # print "ingesting " + ingest['meta']
+                    self.start_ingest(ingest['id'])
+                    path = ingest['meta']
+
+                    if 'Campaign' in ingest['meta']:
+                        # Ingest the campaigns file
+                        self.ingest_csv_file(path, self.camp_table)
+                    elif 'Conversions' in ingest['meta']:
+                        # Ingest the conversions file
+                        self.ingest_csv_file(path, self.conv_table)
+                    else:
+                        utils.log("GoogleAnalytics - Campaign or Conversions not found in file path")
+                    # update the ingest record
+                    self.finish_ingest(ingest['id'])
+
+                # identify any new campaigns and add the key to the coursemap table
+                print("GoogleAnalytics - updating map table")
+                self.update_map_table()
+                # save_run to ingest api
+                # self.save_run_ingest()
+            utils.log("GoogleAnalytics completed")
         pass
 
     def update_map_table(self):
         """
-        Updates the course map table with any ad_content data that is in each table but not in the course_map table
+        Updates the course map table with any ad_content data that is in each table but not in the coursemap table
         :return:
         """
         # get the values to be inserted in map table
@@ -125,7 +127,15 @@ class GoogleAnalytics(base_service.BaseService):
         :return:
         """
         warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-        query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 7 LINES"
+        conv_fields = '(date,campaign,source,ad_content,enrollment_serverside,transactions,revenue)'
+        camp_fields = '(date,campaign,source,ad_content,sessions,new_users,new_sessions,bounce_rate,pages_per_session,avg_session_duration)'
+        fields = ''
+        if tablename == 'campaigns':
+            fields = camp_fields
+        elif tablename == 'conversions':
+            fields = conv_fields
+
+        query = "LOAD DATA LOCAL INFILE '" + ingest_file_path + "' INTO TABLE " + tablename + " CHARACTER SET UTF8 FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n' IGNORE 7 LINES " + fields
 
         cursor = self.sql_ga_conn.cursor()
         cursor.execute(query)
@@ -149,7 +159,7 @@ class GoogleAnalytics(base_service.BaseService):
         query += "("
         for column in columns:
             query += column['col_name'] + " " + column['col_type'] + ', '
-        query += " PRIMARY KEY (`ad_content`), KEY idx_ad_course (ad_content, course_id)) DEFAULT CHARSET=utf8;"
+        query += " PRIMARY KEY (`ad_content`), KEY idx_ad_course (course_id)) DEFAULT CHARSET=utf8;"
         try:
             cursor = self.sql_ga_conn.cursor()
             cursor.execute(query)
