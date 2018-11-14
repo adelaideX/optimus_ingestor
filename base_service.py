@@ -282,6 +282,8 @@ class BaseService(object):
             del (course_dict['personcourse'])
         if 'Course_Event' in course_dict:
             del (course_dict['Course_Event'])
+        if 'googleanalytics' in course_dict:
+            del (course_dict['googleanalytics'])
         return course_dict
 
     @staticmethod
