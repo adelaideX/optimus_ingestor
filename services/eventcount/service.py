@@ -256,7 +256,7 @@ class Eventcount(base_service.BaseService):
         :param json_file: the name of the course structure file
         :return the course information
         """
-        print self
+        #print self
         courseurl = config.SERVER_URL + '/datasources/course_structure/' + json_file
         courseinfofile = urllib2.urlopen(courseurl)
         if courseinfofile:
