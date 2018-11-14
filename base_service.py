@@ -140,7 +140,7 @@ class BaseService(object):
         query += "(service_name, type, meta, started, completed, created, started_date, completed_date) "
         query += "VALUES "
         query += '("' + service_name + '", "' + "save_run" + '", "", 1, 1, "' + current_time + '", "' + current_time + '", "' + current_time + '")'
-        print query
+        # print query
         cur.execute(query)
         self.api_db.commit()
 
@@ -311,7 +311,7 @@ class BaseService(object):
         :param create_db: create the database
         :return the created SQL connection
         """
-        print self
+        # print self
         if sql_connect is None or force_reconnect:
             try:
                 sql_connect = MySQLdb.connect(host=config.SQL_HOST, user=config.SQL_USERNAME,
