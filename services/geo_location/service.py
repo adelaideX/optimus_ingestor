@@ -25,7 +25,7 @@ class GeoLocation(base_service.BaseService):
 
         # The pretty name of the service
         self.pretty_name = "Geo Location"
-        self.enabled = True
+        self.enabled = False
         # Whether to run more than once
         self.loop = True
         # The amount of time to sleep in seconds
