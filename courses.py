@@ -2,6 +2,7 @@ EDX_DATABASES = {
     'default': {'dbname': 'api', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2015', 'icon': 'fa-settings'},
     'personcourse': {'dbname': 'Person_Course', 'icon': 'fa-settings'},
     'Course_Event': {'dbname': 'Course_Event', 'icon': 'fa-settings'},
+    'googleanalytics': {'dbname': 'Google_Analytics', 'icon': 'fa-settings'},
     'AddictionX_3T2015': {'dbname': 'AdelaideX_AddictionX_3T2015', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2015', 'discussiontable': 'AdelaideX-AddictionX-3T2015-prod', 'icon': 'fa-heart', 'year': '2015'},
     'AddictionX_3T2016': {'dbname': 'AdelaideX_AddictionX_3T2016', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2016', 'discussiontable': 'AdelaideX-AddictionX-3T2016-prod', 'icon': 'fa-heart', 'year': '2016'},
     'AnalysisX_3T2017': {'dbname': 'AdelaideX_AnalysisX_3T2017', 'mongoname': 'course-v1:AdelaideX+AnalysisX+3T2017', 'discussiontable': 'AdelaideX-AnalysisX-3T2017-prod', 'icon': 'fa-bar-chart-o', 'year': '2017'},
