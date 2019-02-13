@@ -6,7 +6,7 @@ EDX_DATABASES = {
     'AddictionX_3T2015': {'dbname': 'AdelaideX_AddictionX_3T2015', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2015', 'discussiontable': 'AdelaideX-AddictionX-3T2015-prod', 'icon': 'fa-heart', 'year': '2015'},
     'AddictionX_3T2016': {'dbname': 'AdelaideX_AddictionX_3T2016', 'mongoname': 'course-v1:AdelaideX+AddictionX+3T2016', 'discussiontable': 'AdelaideX-AddictionX-3T2016-prod', 'icon': 'fa-heart', 'year': '2016'},
     'AnalysisX_3T2017': {'dbname': 'AdelaideX_AnalysisX_3T2017', 'mongoname': 'course-v1:AdelaideX+AnalysisX+3T2017', 'discussiontable': 'AdelaideX-AnalysisX-3T2017-prod', 'icon': 'fa-bar-chart-o', 'year': '2017'},
-    'AnalysisX_3T2018': {'dbname': 'AdelaideX_AnalysicsX_3T2018', 'mongoname': 'course-v1:AdelaideX+AnalysisX+3T2018', 'discussiontable': 'AdelaideX-AnalysisX-3T2018-prod', 'icon': 'fa-bar-chart-o', 'year': '2018'},
+    'AnalyticsX_3T2018': {'dbname': 'AdelaideX_AnalyticsX_3T2018', 'mongoname': 'course-v1:AdelaideX+AnalyticsX_3T2018+3T2018', 'discussiontable': 'AdelaideX-AnalyticsX-3T2018-prod', 'icon': 'fa-bar-chart-o', 'year': '2018'},
     'Bard101x_3T2017': {'dbname': 'AdelaideX_Bard101x_3T2017', 'mongoname': 'course-v1:AdelaideX+Bard101x+3T2017', 'discussiontable': 'AdelaideX-Bard101x-3T2017-prod', 'icon': 'fa-book', 'year': '2017'},
     'Bard101x_3T2018': {'dbname': 'AdelaideX_Bard101x_3T2018', 'mongoname': 'course-v1:AdelaideX+Bard101x+3T2018', 'discussiontable': 'AdelaideX-Bard101x-3T2018-prod', 'icon': 'fa-book', 'year': '2018'},
     'BigDataX_3T2017': {'dbname': 'AdelaideX_BigDataX_3T2017', 'mongoname': 'course-v1:AdelaideX+BigDataX+3T2017', 'discussiontable': 'AdelaideX-BigDataX-3T2017-prod', 'icon': 'fa-bar-chart-o', 'year': '2017'},
