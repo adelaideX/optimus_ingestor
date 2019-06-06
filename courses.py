@@ -26,6 +26,7 @@ EDX_DATABASES = {
     'Entrep101X_1T2016': {'dbname': 'AdelaideX_Entrep101X_1T2016', 'mongoname': 'course-v1:AdelaideX+Entrep101X+1T2016', 'discussiontable': 'AdelaideX-Entrep101X-1T2016-prod', 'icon': 'fa-thumbs-o-up', 'year': '2016'},
     'Entrep101X_1T2018': {'dbname': 'AdelaideX_Entrep101X_1T2018', 'mongoname': 'course-v1:AdelaideX+Entrep101X+1T2018', 'discussiontable': 'AdelaideX-Entrep101X-1T2018-prod', 'icon': 'fa-thumbs-o-up', 'year': '2018'},
     'GFABx_3T2018': {'dbname': 'AdelaideX_GFABx_3T2018', 'mongoname': 'course-v1:AdelaideX+GFABx+3T2018', 'discussiontable': 'AdelaideX-GFABx-3T2018-prod', 'icon': 'fa-globe', 'year': '2018'},
+    'GFABx_1T2019': {'dbname': 'AdelaideX_GFABx_1T2019', 'mongoname': 'course-v1:AdelaideX+GFABx+1T2019', 'discussiontable': 'AdelaideX-GFABx-1T2019-prod', 'icon': 'fa-globe', 'year': '2019'},
     'HumBio101x_1T2015': {'dbname': 'AdelaideX_HumBio101x_1T2015', 'mongoname': 'AdelaideX/HumBio101x/1T2015', 'discussiontable': 'AdelaideX-HumBio101x-1T2015-prod', 'icon': 'fa-medkit', 'year': '2015'},
     'HumBio101x_2T2015': {'dbname': 'AdelaideX_HumBio101x_2T2015', 'mongoname': 'course-v1:AdelaideX+HumBio101x+2T2015', 'discussiontable': 'AdelaideX-HumBio101x-2T2015-prod', 'icon': 'fa-medkit', 'year': '2015'},
     'HumBio101x_1T2016': {'dbname': 'AdelaideX_HumBio101x_1T2016', 'mongoname': 'course-v1:AdelaideX+HumBio101x+1T2016', 'discussiontable': 'AdelaideX-HumBio101x-1T2016-prod', 'icon': 'fa-medkit', 'year': '2016'},
